@@ -1,15 +1,13 @@
 import { AnalysisView } from "@/components/AnalysisView";
+import { PageHeader } from "@/components/ui";
 
 export default function AnalysisPage() {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-title text-foreground">Analysis</h1>
-        <p className="mt-2 text-foreground-muted">
-          Review your financial forecast and projections
-        </p>
-      </div>
-
+      <PageHeader
+        title="Analysis"
+        subtitle="Review your financial forecast and projections"
+      />
       <AnalysisView />
     </div>
   );

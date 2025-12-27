@@ -14,7 +14,7 @@ import {
 } from "@/lib/schema";
 import { saveInputs, loadInputs, clearInputs, formatTimestamp } from "@/lib/storage";
 import { FormField, FormSection } from "./FormField";
-import { Button, Badge } from "@/components/ui";
+import { Button, Badge, useToast } from "@/components/ui";
 
 const inputStyles =
   "w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-foreground-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors";
@@ -24,6 +24,7 @@ const selectStyles =
 
 export function InputsForm() {
   const router = useRouter();
+  const { showToast } = useToast();
   const [lastSaved, setLastSaved] = useState<string | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -50,13 +51,15 @@ export function InputsForm() {
   const onSave = (data: AnalysisSession) => {
     const timestamp = saveInputs(data);
     setLastSaved(timestamp);
-    reset(data); // Reset form state to mark as clean
+    reset(data);
+    showToast("Inputs saved successfully", "success");
   };
 
   const onReset = () => {
     clearInputs();
     reset(defaultFormValues);
     setLastSaved(null);
+    showToast("Form reset to defaults", "info");
   };
 
   const onNext = () => {

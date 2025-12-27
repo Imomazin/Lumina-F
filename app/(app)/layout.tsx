@@ -1,5 +1,5 @@
 import { TopNav } from "@/components/TopNav";
-import { Container } from "@/components/ui";
+import { Container, ToastProvider } from "@/components/ui";
 
 export default function AppLayout({
   children,
@@ -7,11 +7,13 @@ export default function AppLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className="min-h-screen bg-background">
-      <TopNav />
-      <main className="py-8">
-        <Container>{children}</Container>
-      </main>
-    </div>
+    <ToastProvider>
+      <div className="min-h-screen bg-background">
+        <TopNav />
+        <main className="py-8">
+          <Container>{children}</Container>
+        </main>
+      </div>
+    </ToastProvider>
   );
 }

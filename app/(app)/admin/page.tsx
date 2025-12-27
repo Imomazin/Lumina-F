@@ -1,15 +1,13 @@
 import { AdminView } from "@/components/AdminView";
+import { PageHeader } from "@/components/ui";
 
 export default function AdminPage() {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-title text-foreground">Settings</h1>
-        <p className="mt-2 text-foreground-muted">
-          Configure application defaults and feature flags
-        </p>
-      </div>
-
+      <PageHeader
+        title="Settings"
+        subtitle="Configure application defaults and feature flags"
+      />
       <AdminView />
     </div>
   );

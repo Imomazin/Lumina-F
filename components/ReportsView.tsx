@@ -1,12 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { loadInputs } from "@/lib/storage";
 import { computeForecast, ForecastResult } from "@/lib/finance";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { AnalysisSession } from "@/lib/schema";
-import { Card, CardContent, Button } from "@/components/ui";
+import { Card, CardContent, Button, EmptyState } from "@/components/ui";
 
 function generateExecutiveSummary(
   inputs: AnalysisSession,
@@ -46,7 +45,6 @@ function generateExecutiveSummary(
 }
 
 export function ReportsView() {
-  const router = useRouter();
   const [inputs, setInputs] = useState<AnalysisSession | null>(null);
   const [forecast, setForecast] = useState<ForecastResult | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -75,39 +73,27 @@ export function ReportsView() {
 
   if (!inputs || !forecast) {
     return (
-      <Card>
-        <CardContent className="flex min-h-[400px] flex-col items-center justify-center py-12">
-          <div className="mx-auto max-w-md text-center">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-surface-2">
-              <svg
-                className="h-6 w-6 text-foreground-muted"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                />
-              </svg>
-            </div>
-            <h3 className="text-section text-foreground">No report data available</h3>
-            <p className="mt-2 text-sm text-foreground-muted">
-              Enter your financial inputs to generate a report
-            </p>
-            <div className="mt-6 flex justify-center gap-3">
-              <Button onClick={() => router.push("/inputs")}>
-                Go to Inputs
-              </Button>
-              <Button variant="secondary" onClick={() => router.push("/dashboard")}>
-                Dashboard
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <EmptyState
+        icon={
+          <svg
+            className="h-7 w-7 text-foreground-muted"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            />
+          </svg>
+        }
+        title="No report data available"
+        description="Enter your financial inputs to generate a professional financial report ready for export."
+        primaryAction={{ label: "Enter Inputs", href: "/inputs" }}
+        secondaryAction={{ label: "Go to Dashboard", href: "/dashboard" }}
+      />
     );
   }
 
