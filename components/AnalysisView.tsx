@@ -6,26 +6,7 @@ import { loadInputs } from "@/lib/storage";
 import { computeForecast, ForecastResult } from "@/lib/finance";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { AnalysisSession } from "@/lib/schema";
-
-interface SummaryCardProps {
-  label: string;
-  value: string;
-  subtext?: string;
-}
-
-function SummaryCard({ label, value, subtext }: SummaryCardProps) {
-  return (
-    <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-800">
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">{label}</p>
-      <p className="mt-1 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
-        {value}
-      </p>
-      {subtext && (
-        <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{subtext}</p>
-      )}
-    </div>
-  );
-}
+import { Card, CardContent, CardHeader, Button } from "@/components/ui";
 
 export function AnalysisView() {
   const router = useRouter();
@@ -46,182 +27,158 @@ export function AnalysisView() {
   if (!isLoaded) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
-        <p className="text-zinc-500">Loading...</p>
+        <p className="text-foreground-muted">Loading...</p>
       </div>
     );
   }
 
-  // Empty state - no inputs
+  // Empty state
   if (!inputs || !forecast) {
     return (
-      <div className="flex min-h-[400px] flex-col items-center justify-center space-y-4 rounded-lg border border-zinc-200 bg-white p-8 dark:border-zinc-700 dark:bg-zinc-800">
-        <p className="text-zinc-600 dark:text-zinc-400">
-          No analysis data available
-        </p>
-        <p className="text-sm text-zinc-500 dark:text-zinc-500">
-          Enter your financial inputs to generate a forecast
-        </p>
-        <button
-          onClick={() => router.push("/inputs")}
-          className="mt-4 rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
-        >
-          Go to Inputs
-        </button>
-      </div>
+      <Card>
+        <CardContent className="flex min-h-[400px] flex-col items-center justify-center py-12">
+          <div className="mx-auto max-w-md text-center">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-surface-2">
+              <svg
+                className="h-6 w-6 text-foreground-muted"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                />
+              </svg>
+            </div>
+            <h3 className="text-section text-foreground">No analysis data</h3>
+            <p className="mt-2 text-sm text-foreground-muted">
+              Enter your financial inputs to generate a forecast analysis
+            </p>
+            <div className="mt-6 flex justify-center gap-3">
+              <Button onClick={() => router.push("/inputs")}>
+                Go to Inputs
+              </Button>
+              <Button variant="secondary" onClick={() => router.push("/dashboard")}>
+                Dashboard
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
-  const { summary, ratios, yearly } = forecast;
+  const { yearly, summary, ratios } = forecast;
   const currency = inputs.currency;
 
   return (
     <div className="space-y-8">
       {/* Summary Cards */}
-      <section>
-        <h2 className="mb-4 text-lg font-medium text-zinc-900 dark:text-zinc-100">
-          Summary
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <SummaryCard
-            label="Revenue (Year 1)"
-            value={formatCurrency(summary.revenueYear1, currency, { compact: true })}
-          />
-          <SummaryCard
-            label={`Revenue (Year ${inputs.yearsForward})`}
-            value={formatCurrency(summary.revenueYearN, currency, { compact: true })}
-          />
-          <SummaryCard
-            label="Avg. EBIT Margin"
-            value={formatPercent(summary.averageEbitMargin)}
-          />
-          <SummaryCard
-            label="Avg. Net Margin"
-            value={formatPercent(summary.averageNetMargin)}
-          />
-        </div>
-      </section>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardContent className="py-5">
+            <p className="text-sm text-foreground-muted">Revenue (Year 1)</p>
+            <p className="mt-1 text-2xl font-semibold text-foreground">
+              {formatCurrency(summary.revenueYear1, currency, { compact: true })}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="py-5">
+            <p className="text-sm text-foreground-muted">Revenue (Year {inputs.yearsForward})</p>
+            <p className="mt-1 text-2xl font-semibold text-foreground">
+              {formatCurrency(summary.revenueYearN, currency, { compact: true })}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="py-5">
+            <p className="text-sm text-foreground-muted">Total Net Income</p>
+            <p className="mt-1 text-2xl font-semibold text-foreground">
+              {formatCurrency(summary.totalNetIncome, currency, { compact: true })}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="py-5">
+            <p className="text-sm text-foreground-muted">Cash Generation</p>
+            <p className={`mt-1 text-2xl font-semibold ${summary.totalCashProxy >= 0 ? "text-success" : "text-danger"}`}>
+              {formatCurrency(summary.totalCashProxy, currency, { compact: true })}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Key Ratios */}
-      <section>
-        <h2 className="mb-4 text-lg font-medium text-zinc-900 dark:text-zinc-100">
-          Key Ratios
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-3">
-          <SummaryCard
-            label="Gross Margin"
-            value={formatPercent(ratios.grossMarginPct)}
-            subtext="Average across forecast period"
-          />
-          <SummaryCard
-            label="EBIT Margin"
-            value={formatPercent(ratios.ebitMarginPct)}
-            subtext="Average across forecast period"
-          />
-          <SummaryCard
-            label="Net Margin"
-            value={formatPercent(ratios.netMarginPct)}
-            subtext="Average across forecast period"
-          />
-        </div>
-      </section>
+      <Card>
+        <CardHeader>
+          <h2 className="text-section text-foreground">Key Ratios</h2>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-6 sm:grid-cols-3">
+            <div className="text-center">
+              <p className="text-3xl font-bold text-primary">
+                {formatPercent(ratios.grossMarginPct)}
+              </p>
+              <p className="mt-1 text-sm text-foreground-muted">Gross Margin</p>
+            </div>
+            <div className="text-center">
+              <p className="text-3xl font-bold text-primary">
+                {formatPercent(ratios.ebitMarginPct)}
+              </p>
+              <p className="mt-1 text-sm text-foreground-muted">EBIT Margin</p>
+            </div>
+            <div className="text-center">
+              <p className="text-3xl font-bold text-primary">
+                {formatPercent(ratios.netMarginPct)}
+              </p>
+              <p className="mt-1 text-sm text-foreground-muted">Net Margin</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Yearly Forecast Table */}
-      <section>
-        <h2 className="mb-4 text-lg font-medium text-zinc-900 dark:text-zinc-100">
-          Yearly Forecast
-        </h2>
-        <div className="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
+      <Card>
+        <CardHeader>
+          <h2 className="text-section text-foreground">Yearly Forecast</h2>
+        </CardHeader>
+        <CardContent className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-zinc-50 text-left dark:bg-zinc-800">
-              <tr>
-                <th className="px-4 py-3 font-medium text-zinc-900 dark:text-zinc-100">
-                  Year
-                </th>
-                <th className="px-4 py-3 text-right font-medium text-zinc-900 dark:text-zinc-100">
-                  Revenue
-                </th>
-                <th className="px-4 py-3 text-right font-medium text-zinc-900 dark:text-zinc-100">
-                  COGS
-                </th>
-                <th className="px-4 py-3 text-right font-medium text-zinc-900 dark:text-zinc-100">
-                  Gross Profit
-                </th>
-                <th className="px-4 py-3 text-right font-medium text-zinc-900 dark:text-zinc-100">
-                  Opex
-                </th>
-                <th className="px-4 py-3 text-right font-medium text-zinc-900 dark:text-zinc-100">
-                  EBIT
-                </th>
-                <th className="px-4 py-3 text-right font-medium text-zinc-900 dark:text-zinc-100">
-                  Net Income
-                </th>
-                <th className="px-4 py-3 text-right font-medium text-zinc-900 dark:text-zinc-100">
-                  Cash Proxy
-                </th>
+            <thead>
+              <tr className="border-b border-border">
+                <th className="py-3 text-left font-medium text-foreground">Year</th>
+                <th className="py-3 text-right font-medium text-foreground">Revenue</th>
+                <th className="py-3 text-right font-medium text-foreground">Gross Profit</th>
+                <th className="py-3 text-right font-medium text-foreground">EBIT</th>
+                <th className="py-3 text-right font-medium text-foreground">Net Income</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-200 bg-white dark:divide-zinc-700 dark:bg-zinc-900">
+            <tbody className="divide-y divide-border">
               {yearly.map((row) => (
-                <tr key={row.year}>
-                  <td className="px-4 py-3 font-medium text-zinc-900 dark:text-zinc-100">
-                    {row.year}
-                  </td>
-                  <td className="px-4 py-3 text-right text-zinc-600 dark:text-zinc-400">
+                <tr key={row.year} className="hover:bg-surface-2 transition-colors">
+                  <td className="py-3 font-medium text-foreground">{row.year}</td>
+                  <td className="py-3 text-right text-foreground-muted tabular-nums">
                     {formatCurrency(row.revenue, currency)}
                   </td>
-                  <td className="px-4 py-3 text-right text-zinc-600 dark:text-zinc-400">
-                    {formatCurrency(row.cogs, currency)}
-                  </td>
-                  <td className="px-4 py-3 text-right text-zinc-600 dark:text-zinc-400">
+                  <td className="py-3 text-right text-foreground-muted tabular-nums">
                     {formatCurrency(row.grossProfit, currency)}
                   </td>
-                  <td className="px-4 py-3 text-right text-zinc-600 dark:text-zinc-400">
-                    {formatCurrency(row.opex, currency)}
-                  </td>
-                  <td className="px-4 py-3 text-right text-zinc-600 dark:text-zinc-400">
+                  <td className="py-3 text-right text-foreground-muted tabular-nums">
                     {formatCurrency(row.ebit, currency)}
                   </td>
-                  <td className="px-4 py-3 text-right text-zinc-600 dark:text-zinc-400">
+                  <td className="py-3 text-right text-foreground-muted tabular-nums">
                     {formatCurrency(row.netIncome, currency)}
-                  </td>
-                  <td className="px-4 py-3 text-right text-zinc-600 dark:text-zinc-400">
-                    {formatCurrency(row.cashProxy, currency)}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </div>
-      </section>
-
-      {/* Totals */}
-      <section>
-        <h2 className="mb-4 text-lg font-medium text-zinc-900 dark:text-zinc-100">
-          Totals
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <SummaryCard
-            label="Total Net Income"
-            value={formatCurrency(summary.totalNetIncome, currency, { compact: true })}
-            subtext={`Over ${inputs.yearsForward} years`}
-          />
-          <SummaryCard
-            label="Total Cash Proxy"
-            value={formatCurrency(summary.totalCashProxy, currency, { compact: true })}
-            subtext="Net Income minus Capex"
-          />
-        </div>
-      </section>
-
-      {/* Navigation */}
-      <div className="flex justify-end border-t border-zinc-200 pt-6 dark:border-zinc-700">
-        <button
-          onClick={() => router.push("/reports")}
-          className="rounded-md bg-zinc-900 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
-        >
-          Go to Reports
-        </button>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

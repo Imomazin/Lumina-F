@@ -6,6 +6,7 @@ import { loadInputs } from "@/lib/storage";
 import { computeForecast, ForecastResult } from "@/lib/finance";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { AnalysisSession } from "@/lib/schema";
+import { Card, CardContent, Button } from "@/components/ui";
 
 function generateExecutiveSummary(
   inputs: AnalysisSession,
@@ -15,13 +16,11 @@ function generateExecutiveSummary(
   const currency = inputs.currency;
   const highlights: string[] = [];
 
-  // Revenue growth
   const revenueGrowth = ((summary.revenueYearN - summary.revenueYear1) / summary.revenueYear1) * 100;
   highlights.push(
     `Revenue projected to grow from ${formatCurrency(summary.revenueYear1, currency, { compact: true })} to ${formatCurrency(summary.revenueYearN, currency, { compact: true })} over ${inputs.yearsForward} years (${formatPercent(revenueGrowth, { showSign: true })} total growth)`
   );
 
-  // Profitability
   highlights.push(
     `Average gross margin of ${formatPercent(ratios.grossMarginPct)} maintained throughout forecast period`
   );
@@ -29,15 +28,13 @@ function generateExecutiveSummary(
     `EBIT margin averages ${formatPercent(ratios.ebitMarginPct)}, indicating ${ratios.ebitMarginPct > 15 ? "strong" : ratios.ebitMarginPct > 10 ? "healthy" : "modest"} operational efficiency`
   );
 
-  // Net income
   highlights.push(
     `Total projected net income of ${formatCurrency(summary.totalNetIncome, currency, { compact: true })} over the forecast period`
   );
 
-  // Cash generation
   if (summary.totalCashProxy > 0) {
     highlights.push(
-      `Positive cash generation of ${formatCurrency(summary.totalCashProxy, currency, { compact: true })} after capital expenditures`
+      `Positive cash generation of ${formatCurrency(Math.abs(summary.totalCashProxy), currency, { compact: true })} after capital expenditures`
     );
   } else {
     highlights.push(
@@ -71,28 +68,46 @@ export function ReportsView() {
   if (!isLoaded) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
-        <p className="text-zinc-500">Loading...</p>
+        <p className="text-foreground-muted">Loading...</p>
       </div>
     );
   }
 
-  // Empty state
   if (!inputs || !forecast) {
     return (
-      <div className="flex min-h-[400px] flex-col items-center justify-center space-y-4 rounded-lg border border-zinc-200 bg-white p-8 dark:border-zinc-700 dark:bg-zinc-800">
-        <p className="text-zinc-600 dark:text-zinc-400">
-          No report data available
-        </p>
-        <p className="text-sm text-zinc-500 dark:text-zinc-500">
-          Enter your financial inputs to generate a report
-        </p>
-        <button
-          onClick={() => router.push("/inputs")}
-          className="mt-4 rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
-        >
-          Go to Inputs
-        </button>
-      </div>
+      <Card>
+        <CardContent className="flex min-h-[400px] flex-col items-center justify-center py-12">
+          <div className="mx-auto max-w-md text-center">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-surface-2">
+              <svg
+                className="h-6 w-6 text-foreground-muted"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+            </div>
+            <h3 className="text-section text-foreground">No report data available</h3>
+            <p className="mt-2 text-sm text-foreground-muted">
+              Enter your financial inputs to generate a report
+            </p>
+            <div className="mt-6 flex justify-center gap-3">
+              <Button onClick={() => router.push("/inputs")}>
+                Go to Inputs
+              </Button>
+              <Button variant="secondary" onClick={() => router.push("/dashboard")}>
+                Dashboard
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -107,30 +122,25 @@ export function ReportsView() {
 
   return (
     <>
-      {/* Print Button - hidden when printing */}
       <div className="mb-6 flex justify-end print:hidden">
-        <button
-          onClick={handlePrint}
-          className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
-        >
+        <Button onClick={handlePrint}>
           Print / Save as PDF
-        </button>
+        </Button>
       </div>
 
-      {/* Report Content */}
       <div className="space-y-8 print:space-y-6">
-        {/* Cover Header */}
-        <header className="border-b border-zinc-200 pb-6 dark:border-zinc-700 print:border-zinc-400">
+        <header className="border-b border-border pb-6 print:border-gray-300">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50 print:text-black">
-                Lumina F Report
+              <h1 className="text-display text-foreground print:text-black">
+                <span className="text-primary print:text-black">Lumina</span>{" "}
+                <span className="text-accent print:text-black">F</span> Report
               </h1>
-              <h2 className="mt-2 text-xl font-semibold text-zinc-700 dark:text-zinc-300 print:text-zinc-800">
+              <h2 className="mt-2 text-title text-foreground-muted print:text-gray-700">
                 {inputs.companyName}
               </h2>
             </div>
-            <div className="text-right text-sm text-zinc-500 dark:text-zinc-400 print:text-zinc-600">
+            <div className="text-right text-sm text-foreground-muted print:text-gray-600">
               <p>{currentDate}</p>
               <p className="mt-1">
                 Currency: {currency} | Horizon: {inputs.yearsForward} years
@@ -139,192 +149,190 @@ export function ReportsView() {
           </div>
         </header>
 
-        {/* Executive Summary */}
         <section className="print:break-inside-avoid">
-          <h2 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-zinc-100 print:text-black">
+          <h2 className="mb-4 text-section text-foreground print:text-black">
             Executive Summary
           </h2>
-          <ul className="space-y-2">
-            {highlights.map((point, idx) => (
-              <li
-                key={idx}
-                className="flex gap-2 text-sm text-zinc-700 dark:text-zinc-300 print:text-zinc-800"
-              >
-                <span className="flex-shrink-0 text-zinc-400 print:text-zinc-600">•</span>
-                <span>{point}</span>
-              </li>
-            ))}
-          </ul>
+          <Card className="print:border-gray-300 print:shadow-none">
+            <CardContent>
+              <ul className="space-y-3">
+                {highlights.map((point, idx) => (
+                  <li
+                    key={idx}
+                    className="flex gap-3 text-sm text-foreground-muted print:text-gray-700"
+                  >
+                    <span className="flex-shrink-0 text-accent print:text-gray-500">•</span>
+                    <span>{point}</span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
         </section>
 
-        {/* Financial Forecast Table */}
         <section className="print:break-inside-avoid">
-          <h2 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-zinc-100 print:text-black">
+          <h2 className="mb-4 text-section text-foreground print:text-black">
             Financial Forecast
           </h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm print:text-xs">
-              <thead>
-                <tr className="border-b border-zinc-200 dark:border-zinc-700 print:border-zinc-400">
-                  <th className="py-2 text-left font-medium text-zinc-900 dark:text-zinc-100 print:text-black">
-                    Year
-                  </th>
-                  <th className="py-2 text-right font-medium text-zinc-900 dark:text-zinc-100 print:text-black">
-                    Revenue
-                  </th>
-                  <th className="py-2 text-right font-medium text-zinc-900 dark:text-zinc-100 print:text-black">
-                    Gross Profit
-                  </th>
-                  <th className="py-2 text-right font-medium text-zinc-900 dark:text-zinc-100 print:text-black">
-                    EBIT
-                  </th>
-                  <th className="py-2 text-right font-medium text-zinc-900 dark:text-zinc-100 print:text-black">
-                    Net Income
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800 print:divide-zinc-200">
-                {yearly.map((row) => (
-                  <tr key={row.year}>
-                    <td className="py-2 font-medium text-zinc-900 dark:text-zinc-100 print:text-black">
-                      {row.year}
-                    </td>
-                    <td className="py-2 text-right text-zinc-600 dark:text-zinc-400 print:text-zinc-700">
-                      {formatCurrency(row.revenue, currency)}
-                    </td>
-                    <td className="py-2 text-right text-zinc-600 dark:text-zinc-400 print:text-zinc-700">
-                      {formatCurrency(row.grossProfit, currency)}
-                    </td>
-                    <td className="py-2 text-right text-zinc-600 dark:text-zinc-400 print:text-zinc-700">
-                      {formatCurrency(row.ebit, currency)}
-                    </td>
-                    <td className="py-2 text-right text-zinc-600 dark:text-zinc-400 print:text-zinc-700">
-                      {formatCurrency(row.netIncome, currency)}
-                    </td>
+          <Card className="print:border-gray-300 print:shadow-none">
+            <CardContent className="overflow-x-auto">
+              <table className="w-full text-sm print:text-xs">
+                <thead>
+                  <tr className="border-b border-border print:border-gray-300">
+                    <th className="py-3 text-left font-medium text-foreground print:text-black">
+                      Year
+                    </th>
+                    <th className="py-3 text-right font-medium text-foreground print:text-black">
+                      Revenue
+                    </th>
+                    <th className="py-3 text-right font-medium text-foreground print:text-black">
+                      Gross Profit
+                    </th>
+                    <th className="py-3 text-right font-medium text-foreground print:text-black">
+                      EBIT
+                    </th>
+                    <th className="py-3 text-right font-medium text-foreground print:text-black">
+                      Net Income
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-border print:divide-gray-200">
+                  {yearly.map((row, idx) => (
+                    <tr key={row.year} className={idx % 2 === 1 ? "bg-surface-2 print:bg-gray-50" : ""}>
+                      <td className="py-3 font-medium text-foreground print:text-black">
+                        {row.year}
+                      </td>
+                      <td className="py-3 text-right text-foreground-muted tabular-nums print:text-gray-700">
+                        {formatCurrency(row.revenue, currency)}
+                      </td>
+                      <td className="py-3 text-right text-foreground-muted tabular-nums print:text-gray-700">
+                        {formatCurrency(row.grossProfit, currency)}
+                      </td>
+                      <td className="py-3 text-right text-foreground-muted tabular-nums print:text-gray-700">
+                        {formatCurrency(row.ebit, currency)}
+                      </td>
+                      <td className="py-3 text-right text-foreground-muted tabular-nums print:text-gray-700">
+                        {formatCurrency(row.netIncome, currency)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </CardContent>
+          </Card>
         </section>
 
-        {/* Assumptions */}
         <section className="print:break-inside-avoid">
-          <h2 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-zinc-100 print:text-black">
+          <h2 className="mb-4 text-section text-foreground print:text-black">
             Key Assumptions
           </h2>
           <div className="grid gap-4 sm:grid-cols-2 print:grid-cols-2">
-            <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-700 print:border-zinc-300 print:p-3">
-              <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 print:text-black">
-                Growth & Revenue
-              </h3>
-              <dl className="mt-2 space-y-1 text-sm">
-                <div className="flex justify-between">
-                  <dt className="text-zinc-500 dark:text-zinc-400 print:text-zinc-600">
-                    Base Revenue
-                  </dt>
-                  <dd className="text-zinc-900 dark:text-zinc-100 print:text-black">
-                    {formatCurrency(inputs.currentRevenue, currency)}
-                  </dd>
-                </div>
-                <div className="flex justify-between">
-                  <dt className="text-zinc-500 dark:text-zinc-400 print:text-zinc-600">
-                    Annual Growth
-                  </dt>
-                  <dd className="text-zinc-900 dark:text-zinc-100 print:text-black">
-                    {formatPercent(inputs.revenueGrowthAssumption)}
-                  </dd>
-                </div>
-              </dl>
-            </div>
-            <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-700 print:border-zinc-300 print:p-3">
-              <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 print:text-black">
-                Cost Structure
-              </h3>
-              <dl className="mt-2 space-y-1 text-sm">
-                <div className="flex justify-between">
-                  <dt className="text-zinc-500 dark:text-zinc-400 print:text-zinc-600">
-                    Base COGS
-                  </dt>
-                  <dd className="text-zinc-900 dark:text-zinc-100 print:text-black">
-                    {formatCurrency(inputs.currentCOGS, currency)}
-                  </dd>
-                </div>
-                <div className="flex justify-between">
-                  <dt className="text-zinc-500 dark:text-zinc-400 print:text-zinc-600">
-                    Base Opex
-                  </dt>
-                  <dd className="text-zinc-900 dark:text-zinc-100 print:text-black">
-                    {formatCurrency(inputs.currentOpex, currency)}
-                  </dd>
-                </div>
-              </dl>
-            </div>
-            <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-700 print:border-zinc-300 print:p-3">
-              <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 print:text-black">
-                Financing
-              </h3>
-              <dl className="mt-2 space-y-1 text-sm">
-                <div className="flex justify-between">
-                  <dt className="text-zinc-500 dark:text-zinc-400 print:text-zinc-600">
-                    Debt Outstanding
-                  </dt>
-                  <dd className="text-zinc-900 dark:text-zinc-100 print:text-black">
-                    {formatCurrency(inputs.debtOutstanding, currency)}
-                  </dd>
-                </div>
-                <div className="flex justify-between">
-                  <dt className="text-zinc-500 dark:text-zinc-400 print:text-zinc-600">
-                    Interest Rate
-                  </dt>
-                  <dd className="text-zinc-900 dark:text-zinc-100 print:text-black">
-                    {formatPercent(inputs.interestRatePct)}
-                  </dd>
-                </div>
-                <div className="flex justify-between">
-                  <dt className="text-zinc-500 dark:text-zinc-400 print:text-zinc-600">
-                    Tax Rate
-                  </dt>
-                  <dd className="text-zinc-900 dark:text-zinc-100 print:text-black">
-                    {formatPercent(inputs.taxRatePct)}
-                  </dd>
-                </div>
-              </dl>
-            </div>
-            <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-700 print:border-zinc-300 print:p-3">
-              <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 print:text-black">
-                Capital
-              </h3>
-              <dl className="mt-2 space-y-1 text-sm">
-                <div className="flex justify-between">
-                  <dt className="text-zinc-500 dark:text-zinc-400 print:text-zinc-600">
-                    Annual Capex
-                  </dt>
-                  <dd className="text-zinc-900 dark:text-zinc-100 print:text-black">
-                    {formatCurrency(inputs.annualCapex, currency)}
-                  </dd>
-                </div>
-              </dl>
-            </div>
+            <Card className="print:border-gray-300 print:shadow-none">
+              <CardContent>
+                <h3 className="text-sm font-medium text-foreground print:text-black">
+                  Growth & Revenue
+                </h3>
+                <dl className="mt-3 space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <dt className="text-foreground-muted print:text-gray-600">Base Revenue</dt>
+                    <dd className="font-medium text-foreground tabular-nums print:text-black">
+                      {formatCurrency(inputs.currentRevenue, currency)}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-foreground-muted print:text-gray-600">Annual Growth</dt>
+                    <dd className="font-medium text-foreground print:text-black">
+                      {formatPercent(inputs.revenueGrowthAssumption)}
+                    </dd>
+                  </div>
+                </dl>
+              </CardContent>
+            </Card>
+
+            <Card className="print:border-gray-300 print:shadow-none">
+              <CardContent>
+                <h3 className="text-sm font-medium text-foreground print:text-black">
+                  Cost Structure
+                </h3>
+                <dl className="mt-3 space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <dt className="text-foreground-muted print:text-gray-600">Base COGS</dt>
+                    <dd className="font-medium text-foreground tabular-nums print:text-black">
+                      {formatCurrency(inputs.currentCOGS, currency)}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-foreground-muted print:text-gray-600">Base Opex</dt>
+                    <dd className="font-medium text-foreground tabular-nums print:text-black">
+                      {formatCurrency(inputs.currentOpex, currency)}
+                    </dd>
+                  </div>
+                </dl>
+              </CardContent>
+            </Card>
+
+            <Card className="print:border-gray-300 print:shadow-none">
+              <CardContent>
+                <h3 className="text-sm font-medium text-foreground print:text-black">
+                  Financing
+                </h3>
+                <dl className="mt-3 space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <dt className="text-foreground-muted print:text-gray-600">Debt Outstanding</dt>
+                    <dd className="font-medium text-foreground tabular-nums print:text-black">
+                      {formatCurrency(inputs.debtOutstanding, currency)}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-foreground-muted print:text-gray-600">Interest Rate</dt>
+                    <dd className="font-medium text-foreground print:text-black">
+                      {formatPercent(inputs.interestRatePct)}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-foreground-muted print:text-gray-600">Tax Rate</dt>
+                    <dd className="font-medium text-foreground print:text-black">
+                      {formatPercent(inputs.taxRatePct)}
+                    </dd>
+                  </div>
+                </dl>
+              </CardContent>
+            </Card>
+
+            <Card className="print:border-gray-300 print:shadow-none">
+              <CardContent>
+                <h3 className="text-sm font-medium text-foreground print:text-black">
+                  Capital
+                </h3>
+                <dl className="mt-3 space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <dt className="text-foreground-muted print:text-gray-600">Annual Capex</dt>
+                    <dd className="font-medium text-foreground tabular-nums print:text-black">
+                      {formatCurrency(inputs.annualCapex, currency)}
+                    </dd>
+                  </div>
+                </dl>
+              </CardContent>
+            </Card>
           </div>
         </section>
 
-        {/* Notes */}
         {inputs.notes && (
           <section className="print:break-inside-avoid">
-            <h2 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-zinc-100 print:text-black">
+            <h2 className="mb-4 text-section text-foreground print:text-black">
               Notes
             </h2>
-            <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-700 print:border-zinc-300">
-              <p className="whitespace-pre-wrap text-sm text-zinc-700 dark:text-zinc-300 print:text-zinc-800">
-                {inputs.notes}
-              </p>
-            </div>
+            <Card className="print:border-gray-300 print:shadow-none">
+              <CardContent>
+                <p className="whitespace-pre-wrap text-sm text-foreground-muted print:text-gray-700">
+                  {inputs.notes}
+                </p>
+              </CardContent>
+            </Card>
           </section>
         )}
 
-        {/* Footer */}
-        <footer className="border-t border-zinc-200 pt-4 text-center text-xs text-zinc-400 dark:border-zinc-700 dark:text-zinc-500 print:border-zinc-300 print:text-zinc-500">
+        <footer className="border-t border-border pt-6 text-center text-xs text-foreground-muted print:border-gray-300 print:text-gray-500">
           <p>Generated by Lumina F</p>
         </footer>
       </div>

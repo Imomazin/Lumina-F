@@ -1,54 +1,157 @@
 @import "tailwindcss";
 
+/* Premium Finance Theme Tokens */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Backgrounds */
+  --background: #fafafa;
+  --surface: #ffffff;
+  --surface-2: #f4f4f5;
+
+  /* Text */
+  --foreground: #18181b;
+  --foreground-muted: #71717a;
+
+  /* Borders & Rings */
+  --border: #e4e4e7;
+  --ring: #a1a1aa;
+
+  /* Primary - Deep Navy */
+  --primary: #1e3a5f;
+  --primary-hover: #2d4a6f;
+  --primary-foreground: #ffffff;
+
+  /* Accent - Warm Gold */
+  --accent: #b8860b;
+  --accent-hover: #996f0a;
+  --accent-foreground: #ffffff;
+
+  /* Semantic Colors */
+  --success: #16a34a;
+  --success-foreground: #ffffff;
+  --warning: #ca8a04;
+  --warning-foreground: #ffffff;
+  --danger: #dc2626;
+  --danger-foreground: #ffffff;
+
+  /* Spacing */
+  --page-padding: 1.5rem;
+  --content-max-width: 80rem;
+}
+
+/* Dark Mode */
+.dark {
+  --background: #0f0f10;
+  --surface: #18181b;
+  --surface-2: #27272a;
+
+  --foreground: #fafafa;
+  --foreground-muted: #a1a1aa;
+
+  --border: #3f3f46;
+  --ring: #52525b;
+
+  --primary: #3b82f6;
+  --primary-hover: #60a5fa;
+  --primary-foreground: #ffffff;
+
+  --accent: #d4a012;
+  --accent-hover: #eab308;
+  --accent-foreground: #18181b;
+
+  --success: #22c55e;
+  --success-foreground: #ffffff;
+  --warning: #eab308;
+  --warning-foreground: #18181b;
+  --danger: #ef4444;
+  --danger-foreground: #ffffff;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-foreground-muted: var(--foreground-muted);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-danger: var(--danger);
+  --color-danger-foreground: var(--danger-foreground);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Typography Scale */
+.text-display {
+  font-size: 2.5rem;
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.text-title {
+  font-size: 1.5rem;
+  line-height: 1.25;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.text-section {
+  font-size: 1.125rem;
+  line-height: 1.4;
+  font-weight: 600;
+}
+
+.text-body {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+.text-small {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.text-muted {
+  color: var(--foreground-muted);
 }
 
 /* Print styles */
 @media print {
-  /* Hide navigation and non-essential elements */
   header,
   nav {
     display: none !important;
   }
 
-  /* Reset backgrounds for printing */
   body {
     background: white !important;
     color: black !important;
   }
 
-  /* Clean margins */
   @page {
     margin: 1in;
     size: letter;
   }
 
-  /* Avoid page breaks inside sections */
   section {
     break-inside: avoid;
   }
 
-  /* Ensure tables don't break badly */
   table {
     break-inside: auto;
   }
@@ -58,12 +161,10 @@ body {
     break-after: auto;
   }
 
-  /* Remove shadows and borders that don't print well */
   * {
     box-shadow: none !important;
   }
 
-  /* Ensure links are visible but not styled */
   a {
     color: inherit !important;
     text-decoration: none !important;

@@ -18,19 +18,19 @@ export function FormField({
   required,
 }: FormFieldProps) {
   return (
-    <div className="space-y-1">
+    <div className="space-y-1.5">
       <label
         htmlFor={htmlFor}
-        className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+        className="block text-sm font-medium text-foreground"
       >
         {label}
-        {required && <span className="ml-1 text-red-500">*</span>}
+        {required && <span className="ml-1 text-danger">*</span>}
       </label>
       {children}
       {helper && !error && (
-        <p className="text-xs text-zinc-500 dark:text-zinc-400">{helper}</p>
+        <p className="text-xs text-foreground-muted">{helper}</p>
       )}
-      {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
+      {error && <p className="text-xs text-danger">{error}</p>}
     </div>
   );
 }
@@ -43,7 +43,7 @@ interface FormSectionProps {
 export function FormSection({ title, children }: FormSectionProps) {
   return (
     <section className="space-y-4">
-      <h2 className="border-b border-zinc-200 pb-2 text-lg font-medium text-zinc-900 dark:border-zinc-700 dark:text-zinc-100">
+      <h2 className="border-b border-border pb-2 text-section text-foreground">
         {title}
       </h2>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{children}</div>

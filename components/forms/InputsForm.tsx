@@ -14,12 +14,13 @@ import {
 } from "@/lib/schema";
 import { saveInputs, loadInputs, clearInputs, formatTimestamp } from "@/lib/storage";
 import { FormField, FormSection } from "./FormField";
+import { Button, Badge } from "@/components/ui";
 
 const inputStyles =
-  "w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-zinc-400 dark:focus:ring-zinc-400";
+  "w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-foreground-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors";
 
 const selectStyles =
-  "w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-zinc-400 dark:focus:ring-zinc-400";
+  "w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors";
 
 export function InputsForm() {
   const router = useRouter();
@@ -66,7 +67,7 @@ export function InputsForm() {
   if (!isLoaded) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
-        <p className="text-zinc-500">Loading...</p>
+        <p className="text-foreground-muted">Loading...</p>
       </div>
     );
   }
@@ -431,46 +432,29 @@ export function InputsForm() {
       </FormSection>
 
       {/* Actions */}
-      <div className="flex flex-col gap-4 border-t border-zinc-200 pt-6 dark:border-zinc-700 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 border-t border-border pt-6 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex gap-3">
-          <button
-            type="submit"
-            className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
-          >
-            Save
-          </button>
-          <button
-            type="button"
-            onClick={onReset}
-            className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
-          >
+          <Button type="submit">Save</Button>
+          <Button type="button" variant="secondary" onClick={onReset}>
             Reset
-          </button>
+          </Button>
         </div>
 
         <div className="flex items-center gap-4">
           {lastSaved && (
-            <span className="text-xs text-zinc-500 dark:text-zinc-400">
+            <span className="text-xs text-foreground-muted">
               Last saved: {formatTimestamp(lastSaved)}
             </span>
           )}
-          {isDirty && (
-            <span className="text-xs text-amber-600 dark:text-amber-400">
-              Unsaved changes
-            </span>
-          )}
+          {isDirty && <Badge variant="warning">Unsaved changes</Badge>}
         </div>
       </div>
 
       {/* Navigation */}
-      <div className="flex justify-end border-t border-zinc-200 pt-6 dark:border-zinc-700">
-        <button
-          type="button"
-          onClick={onNext}
-          className="rounded-md bg-zinc-900 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
-        >
+      <div className="flex justify-end border-t border-border pt-6">
+        <Button type="button" size="lg" onClick={onNext}>
           Next: Analysis
-        </button>
+        </Button>
       </div>
     </form>
   );
