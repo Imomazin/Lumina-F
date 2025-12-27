@@ -13,3 +13,4 @@ export { WelcomeModal, useOnboarding } from "./WelcomeModal";
 export { ConfidenceIndicator } from "./ConfidenceIndicator";
 export { ModelHealth, ModelHealthCompact } from "./ModelHealth";
 export { TriangulationPanel, LimitationsStatement } from "./TriangulationPanel";
+export { MetricCard, MetricGrid } from "./MetricCard";
