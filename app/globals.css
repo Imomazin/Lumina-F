@@ -22,3 +22,50 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Print styles */
+@media print {
+  /* Hide navigation and non-essential elements */
+  header,
+  nav {
+    display: none !important;
+  }
+
+  /* Reset backgrounds for printing */
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Clean margins */
+  @page {
+    margin: 1in;
+    size: letter;
+  }
+
+  /* Avoid page breaks inside sections */
+  section {
+    break-inside: avoid;
+  }
+
+  /* Ensure tables don't break badly */
+  table {
+    break-inside: auto;
+  }
+
+  tr {
+    break-inside: avoid;
+    break-after: auto;
+  }
+
+  /* Remove shadows and borders that don't print well */
+  * {
+    box-shadow: none !important;
+  }
+
+  /* Ensure links are visible but not styled */
+  a {
+    color: inherit !important;
+    text-decoration: none !important;
+  }
+}
