@@ -9,3 +9,4 @@ export { Divider } from "./Divider";
 export { PageHeader } from "./PageHeader";
 export { EmptyState } from "./EmptyState";
 export { ToastProvider, useToast } from "./Toast";
+export { WelcomeModal, useOnboarding } from "./WelcomeModal";
