@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { loadInputs, clearInputs, formatTimestamp } from "@/lib/storage";
 import { AnalysisSession } from "@/lib/schema";
-import { Card, CardContent, CardHeader, Button, Badge } from "@/components/ui";
+import { Card, CardContent, CardHeader, Button, Badge, ModelHealthCompact, TriangulationPanel } from "@/components/ui";
 
 type DataStatus = "not_started" | "in_progress" | "ready";
 
@@ -104,11 +104,16 @@ export function DashboardView() {
               {lastSaved ? formatTimestamp(lastSaved) : "—"}
             </p>
             <p className="mt-1 text-sm text-foreground-muted">
-              {inputs ? `${inputs.yearsForward} year forecast` : "No session"}
+              {inputs ? `${inputs.yearsForward} year projection` : "No session"}
             </p>
           </CardContent>
         </Card>
       </div>
+
+      {/* Model Health Overview */}
+      {inputs && (
+        <ModelHealthCompact inputs={inputs} />
+      )}
 
       {/* Quick Actions */}
       <Card>
@@ -151,7 +156,7 @@ export function DashboardView() {
                 Run Analysis
               </h3>
               <p className="mt-1 text-sm text-foreground-muted">
-                View financial forecast and projections
+                View financial projections and scenarios
               </p>
             </Link>
 
@@ -209,10 +214,17 @@ export function DashboardView() {
                 <dd className="mt-1 font-medium text-foreground">{inputs.startYear}</dd>
               </div>
               <div>
-                <dt className="text-sm text-foreground-muted">Forecast Horizon</dt>
+                <dt className="text-sm text-foreground-muted">Projection Horizon</dt>
                 <dd className="mt-1 font-medium text-foreground">{inputs.yearsForward} years</dd>
               </div>
             </dl>
+
+            <div className="mt-6">
+              <TriangulationPanel type="limitation" title="Model Transparency">
+                Projections derive directly from your stated assumptions. Review assumption confidence
+                levels before interpreting outputs as actionable guidance.
+              </TriangulationPanel>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -226,9 +238,9 @@ export function DashboardView() {
           <CardContent>
             <ol className="space-y-4">
               {[
-                "Enter your company information and financial data",
-                "Run the analysis to generate financial projections",
-                "View and export your financial reports",
+                "Enter your company information and financial assumptions",
+                "Run the analysis to generate scenario projections",
+                "Review and export your projection reports",
               ].map((step, idx) => (
                 <li key={idx} className="flex gap-4">
                   <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground">

@@ -5,7 +5,8 @@ import { loadInputs } from "@/lib/storage";
 import { computeForecast, ForecastResult } from "@/lib/finance";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { AnalysisSession } from "@/lib/schema";
-import { Card, CardContent, CardHeader, EmptyState } from "@/components/ui";
+import { Card, CardContent, CardHeader, EmptyState, TriangulationPanel, Badge } from "@/components/ui";
+import { CONFIDENCE_LEVELS } from "@/lib/schema";
 import { RevenueChart, ProfitChart, MarginChart } from "@/components/charts";
 
 export function AnalysisView() {
@@ -51,7 +52,7 @@ export function AnalysisView() {
           </svg>
         }
         title="No analysis data available"
-        description="Enter your financial inputs to generate a forecast analysis with projections and key metrics."
+        description="Enter your financial inputs to generate projection analysis with key metrics and insights."
         primaryAction={{ label: "Enter Inputs", href: "/inputs" }}
         secondaryAction={{ label: "Go to Dashboard", href: "/dashboard" }}
       />
@@ -159,10 +160,10 @@ export function AnalysisView() {
         </CardContent>
       </Card>
 
-      {/* Yearly Forecast Table */}
+      {/* Yearly Projection Table */}
       <Card>
         <CardHeader>
-          <h2 className="text-section text-foreground">Yearly Forecast</h2>
+          <h2 className="text-section text-foreground">Yearly Projection</h2>
         </CardHeader>
         <CardContent className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -197,6 +198,126 @@ export function AnalysisView() {
           </table>
         </CardContent>
       </Card>
+
+      {/* Assumption Traceability */}
+      <Card>
+        <CardHeader>
+          <h2 className="text-section text-foreground">Driving Assumptions</h2>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {/* Revenue Growth */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-foreground">Revenue Growth</span>
+                {inputs.assumptionMeta?.revenueGrowth && (
+                  <Badge
+                    variant={
+                      inputs.assumptionMeta.revenueGrowth.confidence === "grounded"
+                        ? "success"
+                        : inputs.assumptionMeta.revenueGrowth.confidence === "reasoned"
+                        ? "default"
+                        : "warning"
+                    }
+                  >
+                    {CONFIDENCE_LEVELS.find(
+                      (c) => c.value === inputs.assumptionMeta?.revenueGrowth?.confidence
+                    )?.label || "Reasoned"}
+                  </Badge>
+                )}
+              </div>
+              <p className="text-2xl font-semibold text-foreground">
+                {formatPercent(inputs.revenueGrowthAssumption)}
+              </p>
+              <p className="text-xs text-foreground-muted">
+                Drives all revenue projections year-over-year
+              </p>
+            </div>
+
+            {/* Cost Structure */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-foreground">COGS Ratio</span>
+                {inputs.assumptionMeta?.costStructure && (
+                  <Badge
+                    variant={
+                      inputs.assumptionMeta.costStructure.confidence === "grounded"
+                        ? "success"
+                        : inputs.assumptionMeta.costStructure.confidence === "reasoned"
+                        ? "default"
+                        : "warning"
+                    }
+                  >
+                    {CONFIDENCE_LEVELS.find(
+                      (c) => c.value === inputs.assumptionMeta?.costStructure?.confidence
+                    )?.label || "Reasoned"}
+                  </Badge>
+                )}
+              </div>
+              <p className="text-2xl font-semibold text-foreground">
+                {formatPercent((inputs.currentCOGS / inputs.currentRevenue) * 100)}
+              </p>
+              <p className="text-xs text-foreground-muted">
+                Cost of goods as percentage of revenue
+              </p>
+            </div>
+
+            {/* Financing */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-foreground">Interest Rate</span>
+                {inputs.assumptionMeta?.financing && (
+                  <Badge
+                    variant={
+                      inputs.assumptionMeta.financing.confidence === "grounded"
+                        ? "success"
+                        : inputs.assumptionMeta.financing.confidence === "reasoned"
+                        ? "default"
+                        : "warning"
+                    }
+                  >
+                    {CONFIDENCE_LEVELS.find(
+                      (c) => c.value === inputs.assumptionMeta?.financing?.confidence
+                    )?.label || "Grounded"}
+                  </Badge>
+                )}
+              </div>
+              <p className="text-2xl font-semibold text-foreground">
+                {formatPercent(inputs.interestRatePct)}
+              </p>
+              <p className="text-xs text-foreground-muted">
+                Applied to {formatCurrency(inputs.debtOutstanding, currency, { compact: true })} debt
+              </p>
+            </div>
+
+            {/* Tax Rate */}
+            <div className="space-y-2">
+              <span className="text-sm font-medium text-foreground">Tax Rate</span>
+              <p className="text-2xl font-semibold text-foreground">
+                {formatPercent(inputs.taxRatePct)}
+              </p>
+              <p className="text-xs text-foreground-muted">
+                Effective corporate tax rate on EBT
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <TriangulationPanel type="strategic" title="Assumption Impact">
+              These assumptions directly determine all projected outputs. Revenue growth compounds
+              annually; cost ratios and tax rates are applied each period. Consider what conditions
+              would cause these assumptions to change materially.
+            </TriangulationPanel>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Model Context */}
+      <TriangulationPanel type="limitation" title="Projection Methodology">
+        This analysis uses deterministic modeling: outputs derive directly from stated assumptions
+        with no probabilistic adjustment or machine learning. Results should be interpreted as
+        scenario illustrations, not predictions.
+      </TriangulationPanel>
     </div>
   );
 }

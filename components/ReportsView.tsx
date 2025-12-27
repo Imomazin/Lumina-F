@@ -5,7 +5,7 @@ import { loadInputs } from "@/lib/storage";
 import { computeForecast, ForecastResult, YearlyMetrics } from "@/lib/finance";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { AnalysisSession, CurrencyCode } from "@/lib/schema";
-import { Card, CardContent, Button, EmptyState, Badge } from "@/components/ui";
+import { Card, CardContent, Button, EmptyState, Badge, LimitationsStatement } from "@/components/ui";
 
 function generateExecutiveSummary(
   inputs: AnalysisSession,
@@ -21,14 +21,14 @@ function generateExecutiveSummary(
   );
 
   highlights.push(
-    `Average gross margin of ${formatPercent(ratios.grossMarginPct)} maintained throughout forecast period`
+    `Average gross margin of ${formatPercent(ratios.grossMarginPct)} maintained throughout projection period`
   );
   highlights.push(
     `EBIT margin averages ${formatPercent(ratios.ebitMarginPct)}, indicating ${ratios.ebitMarginPct > 15 ? "strong" : ratios.ebitMarginPct > 10 ? "healthy" : "modest"} operational efficiency`
   );
 
   highlights.push(
-    `Total projected net income of ${formatCurrency(summary.totalNetIncome, currency, { compact: true })} over the forecast period`
+    `Total projected net income of ${formatCurrency(summary.totalNetIncome, currency, { compact: true })} over the projection period`
   );
 
   if (summary.totalCashProxy > 0) {
@@ -504,7 +504,7 @@ export function ReportsView() {
                     </dd>
                   </div>
                   <div className="flex justify-between">
-                    <dt className="text-foreground-muted print:text-gray-600">Forecast Period</dt>
+                    <dt className="text-foreground-muted print:text-gray-600">Projection Period</dt>
                     <dd className="font-medium text-foreground print:text-black">
                       {inputs.yearsForward} years
                     </dd>
@@ -609,6 +609,14 @@ export function ReportsView() {
           </section>
         )}
 
+        {/* Model Limitations */}
+        <section className="print:break-inside-avoid">
+          <h2 className="mb-4 text-section text-foreground print:text-black">
+            Model Limitations
+          </h2>
+          <LimitationsStatement className="print:border-gray-300 print:bg-gray-50" />
+        </section>
+
         {/* Disclaimer */}
         <section className="print:break-inside-avoid">
           <Card className="border-warning/30 bg-warning/5 print:border-gray-300 print:bg-gray-50 print-card">
@@ -619,6 +627,8 @@ export function ReportsView() {
                 for internal planning purposes only. Actual results may differ materially from these
                 projections due to market conditions, operational factors, and other uncertainties.
                 This report does not constitute financial advice or a recommendation for investment.
+                All outputs are deterministic: they derive directly from stated assumptions and do not
+                incorporate probabilistic forecasting or machine learning predictions.
               </p>
             </CardContent>
           </Card>

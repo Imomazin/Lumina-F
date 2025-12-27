@@ -26,8 +26,24 @@ export const CURRENCIES = [
   { code: "AUD", symbol: "A$", name: "Australian Dollar" },
 ] as const;
 
+// Assumption confidence levels
+export const CONFIDENCE_LEVELS = [
+  { value: "grounded", label: "Grounded", description: "Based on historical data or contractual commitments" },
+  { value: "reasoned", label: "Reasoned", description: "Based on market analysis or comparable benchmarks" },
+  { value: "exploratory", label: "Exploratory", description: "Hypothetical or aspirational" },
+] as const;
+
 export type Industry = (typeof INDUSTRIES)[number];
 export type CurrencyCode = (typeof CURRENCIES)[number]["code"];
+export type ConfidenceLevel = (typeof CONFIDENCE_LEVELS)[number]["value"];
+
+// Assumption metadata schema
+const assumptionMetaSchema = z.object({
+  confidence: z.enum(["grounded", "reasoned", "exploratory"]).default("reasoned"),
+  narrative: z.string().max(500).optional(),
+});
+
+export type AssumptionMeta = z.infer<typeof assumptionMetaSchema>;
 
 // Form schema - simple coerced numbers
 export const analysisSessionSchema = z.object({
@@ -65,6 +81,14 @@ export const analysisSessionSchema = z.object({
 
   // Notes
   notes: z.string().max(2000).optional(),
+
+  // Assumption metadata (optional, for assumption intelligence)
+  assumptionMeta: z.object({
+    revenueGrowth: assumptionMetaSchema.optional(),
+    costStructure: assumptionMetaSchema.optional(),
+    financing: assumptionMetaSchema.optional(),
+    capital: assumptionMetaSchema.optional(),
+  }).optional(),
 });
 
 // Type for form values
@@ -91,6 +115,12 @@ export const defaultFormValues: AnalysisSession = {
   interestRatePct: 5,
   taxRatePct: 25,
   notes: "",
+  assumptionMeta: {
+    revenueGrowth: { confidence: "reasoned", narrative: "" },
+    costStructure: { confidence: "reasoned", narrative: "" },
+    financing: { confidence: "grounded", narrative: "" },
+    capital: { confidence: "reasoned", narrative: "" },
+  },
 };
 
 // Convert stored session to form values (identity for now)
