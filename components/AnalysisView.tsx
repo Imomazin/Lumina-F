@@ -6,6 +6,7 @@ import { computeForecast, ForecastResult } from "@/lib/finance";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { AnalysisSession } from "@/lib/schema";
 import { Card, CardContent, CardHeader, EmptyState } from "@/components/ui";
+import { RevenueChart, ProfitChart, MarginChart } from "@/components/charts";
 
 export function AnalysisView() {
   const [inputs, setInputs] = useState<AnalysisSession | null>(null);
@@ -98,10 +99,41 @@ export function AnalysisView() {
         </Card>
       </div>
 
+      {/* Charts Section */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <h2 className="text-section text-foreground">Revenue Trend</h2>
+          </CardHeader>
+          <CardContent>
+            <RevenueChart data={yearly} currency={currency} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <h2 className="text-section text-foreground">EBIT & Net Income</h2>
+          </CardHeader>
+          <CardContent>
+            <ProfitChart data={yearly} currency={currency} />
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Margin Trends */}
+      <Card>
+        <CardHeader>
+          <h2 className="text-section text-foreground">Margin Trends</h2>
+        </CardHeader>
+        <CardContent>
+          <MarginChart data={yearly} />
+        </CardContent>
+      </Card>
+
       {/* Key Ratios */}
       <Card>
         <CardHeader>
-          <h2 className="text-section text-foreground">Key Ratios</h2>
+          <h2 className="text-section text-foreground">Key Ratios (Average)</h2>
         </CardHeader>
         <CardContent>
           <div className="grid gap-6 sm:grid-cols-3">
