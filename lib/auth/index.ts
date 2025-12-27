@@ -42,9 +42,9 @@ declare module "next-auth/jwt" {
 export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/login",
-    signUp: "/register",
     error: "/login",
     verifyRequest: "/verify-email",
+    newUser: "/register",
   },
   session: {
     strategy: "jwt",

@@ -9,7 +9,7 @@ import { users } from "@/lib/db";
 
 // Initialize Stripe (use test key for development)
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "sk_test_placeholder", {
-  apiVersion: "2023-10-16",
+  apiVersion: "2025-12-15.clover",
   typescript: true,
 });
 
@@ -209,12 +209,16 @@ export async function handleSubscriptionCreated(
   const userId = subscription.metadata.userId;
   if (!userId) return;
 
+  // Access period end from subscription data
+  const subData = subscription as unknown as { current_period_end?: number };
+  const periodEnd = subData.current_period_end
+    ? new Date(subData.current_period_end * 1000).toISOString()
+    : null;
+
   users.update(userId, {
     stripeSubscriptionId: subscription.id,
     stripePriceId: subscription.items.data[0]?.price.id ?? null,
-    stripeCurrentPeriodEnd: new Date(
-      subscription.current_period_end * 1000
-    ).toISOString(),
+    stripeCurrentPeriodEnd: periodEnd,
   });
 }
 
@@ -224,11 +228,15 @@ export async function handleSubscriptionUpdated(
   const userId = subscription.metadata.userId;
   if (!userId) return;
 
+  // Access period end from subscription data
+  const subData = subscription as unknown as { current_period_end?: number };
+  const periodEnd = subData.current_period_end
+    ? new Date(subData.current_period_end * 1000).toISOString()
+    : null;
+
   users.update(userId, {
     stripePriceId: subscription.items.data[0]?.price.id ?? null,
-    stripeCurrentPeriodEnd: new Date(
-      subscription.current_period_end * 1000
-    ).toISOString(),
+    stripeCurrentPeriodEnd: periodEnd,
   });
 }
 

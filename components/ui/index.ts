@@ -14,3 +14,13 @@ export { ConfidenceIndicator } from "./ConfidenceIndicator";
 export { ModelHealth, ModelHealthCompact } from "./ModelHealth";
 export { TriangulationPanel, LimitationsStatement } from "./TriangulationPanel";
 export { MetricCard, MetricGrid } from "./MetricCard";
+export {
+  useKeyboardShortcuts,
+  useAppShortcuts,
+  ShortcutsModal,
+  Confetti,
+  Skeleton,
+  Tooltip,
+  ProgressBar,
+} from "./KeyboardShortcuts";
+export { CommandPalette } from "./CommandPalette";
