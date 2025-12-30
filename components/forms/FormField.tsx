@@ -38,14 +38,16 @@ export function FormField({
 interface FormSectionProps {
   title: string;
   children: ReactNode;
+  action?: ReactNode;
 }
 
-export function FormSection({ title, children }: FormSectionProps) {
+export function FormSection({ title, children, action }: FormSectionProps) {
   return (
     <section className="space-y-4">
-      <h2 className="border-b border-border pb-2 text-section text-foreground">
-        {title}
-      </h2>
+      <div className="flex items-center justify-between border-b border-border pb-2">
+        <h2 className="text-section text-foreground">{title}</h2>
+        {action}
+      </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{children}</div>
     </section>
   );

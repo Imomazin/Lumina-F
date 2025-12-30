@@ -11,10 +11,18 @@ import {
   toFormValues,
   INDUSTRIES,
   CURRENCIES,
+  ConfidenceLevel,
 } from "@/lib/schema";
 import { saveInputs, loadInputs, clearInputs, formatTimestamp } from "@/lib/storage";
 import { FormField, FormSection } from "./FormField";
-import { Button, Badge, useToast } from "@/components/ui";
+import {
+  Button,
+  Badge,
+  useToast,
+  ConfidenceIndicator,
+  ModelHealth,
+  TriangulationPanel,
+} from "@/components/ui";
 
 const inputStyles =
   "w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-foreground-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors";
@@ -22,21 +30,45 @@ const inputStyles =
 const selectStyles =
   "w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors";
 
+interface AssumptionMetaItem {
+  confidence: ConfidenceLevel;
+  narrative?: string;
+}
+
+interface AssumptionMeta {
+  revenueGrowth: AssumptionMetaItem;
+  costStructure: AssumptionMetaItem;
+  financing: AssumptionMetaItem;
+  capital: AssumptionMetaItem;
+}
+
+const defaultMeta: AssumptionMeta = {
+  revenueGrowth: { confidence: "reasoned", narrative: "" },
+  costStructure: { confidence: "reasoned", narrative: "" },
+  financing: { confidence: "grounded", narrative: "" },
+  capital: { confidence: "reasoned", narrative: "" },
+};
+
 export function InputsForm() {
   const router = useRouter();
   const { showToast } = useToast();
   const [lastSaved, setLastSaved] = useState<string | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [assumptionMeta, setAssumptionMeta] = useState<AssumptionMeta>(defaultMeta);
+  const [showNarratives, setShowNarratives] = useState(false);
 
   const {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors, isDirty },
   } = useForm<AnalysisSession>({
     resolver: zodResolver(analysisSessionSchema) as Resolver<AnalysisSession>,
     defaultValues: defaultFormValues,
   });
+
+  const formValues = watch();
 
   // Load saved inputs on mount
   useEffect(() => {
@@ -44,14 +76,40 @@ export function InputsForm() {
     if (stored) {
       reset(toFormValues(stored.data));
       setLastSaved(stored.lastSaved);
+      if (stored.data.assumptionMeta) {
+        setAssumptionMeta({
+          revenueGrowth: stored.data.assumptionMeta.revenueGrowth || defaultMeta.revenueGrowth,
+          costStructure: stored.data.assumptionMeta.costStructure || defaultMeta.costStructure,
+          financing: stored.data.assumptionMeta.financing || defaultMeta.financing,
+          capital: stored.data.assumptionMeta.capital || defaultMeta.capital,
+        });
+      }
     }
     setIsLoaded(true);
   }, [reset]);
 
+  const updateConfidence = (key: keyof AssumptionMeta, confidence: ConfidenceLevel) => {
+    setAssumptionMeta((prev) => ({
+      ...prev,
+      [key]: { ...prev[key], confidence },
+    }));
+  };
+
+  const updateNarrative = (key: keyof AssumptionMeta, narrative: string) => {
+    setAssumptionMeta((prev) => ({
+      ...prev,
+      [key]: { ...prev[key], narrative },
+    }));
+  };
+
   const onSave = (data: AnalysisSession) => {
-    const timestamp = saveInputs(data);
+    const dataWithMeta = {
+      ...data,
+      assumptionMeta: assumptionMeta,
+    };
+    const timestamp = saveInputs(dataWithMeta);
     setLastSaved(timestamp);
-    reset(data);
+    reset(dataWithMeta);
     showToast("Inputs saved successfully", "success");
   };
 
@@ -77,6 +135,30 @@ export function InputsForm() {
 
   return (
     <form onSubmit={handleSubmit(onSave)} className="space-y-8">
+      {/* Model Profile Sidebar */}
+      <div className="grid gap-6 lg:grid-cols-4">
+        <div className="lg:col-span-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-foreground">Projection Inputs</h2>
+            <label className="flex items-center gap-2 text-sm text-foreground-muted">
+              <input
+                type="checkbox"
+                checked={showNarratives}
+                onChange={(e) => setShowNarratives(e.target.checked)}
+                className="rounded border-border"
+              />
+              Show assumption narratives
+            </label>
+          </div>
+          <p className="mt-1 text-sm text-foreground-muted">
+            Define the assumptions that drive your financial projection. Tag each section with a confidence level.
+          </p>
+        </div>
+        <div className="lg:col-span-1">
+          <ModelHealth inputs={{ ...formValues, assumptionMeta }} />
+        </div>
+      </div>
+
       {/* Company Section */}
       <FormSection title="Company">
         <FormField
@@ -162,8 +244,16 @@ export function InputsForm() {
         </FormField>
       </FormSection>
 
-      {/* Revenue Section */}
-      <FormSection title="Revenue">
+      {/* Revenue Assumptions */}
+      <FormSection
+        title="Revenue Assumptions"
+        action={
+          <ConfidenceIndicator
+            level={assumptionMeta.revenueGrowth.confidence}
+            onChange={(c) => updateConfidence("revenueGrowth", c)}
+          />
+        }
+      >
         <FormField
           label="Current Revenue"
           htmlFor="currentRevenue"
@@ -186,7 +276,7 @@ export function InputsForm() {
           label="Revenue Growth (%)"
           htmlFor="revenueGrowthAssumption"
           error={errors.revenueGrowthAssumption?.message}
-          helper="Expected annual growth rate"
+          helper="Annual growth rate assumption"
           required
         >
           <input
@@ -200,10 +290,44 @@ export function InputsForm() {
             {...register("revenueGrowthAssumption")}
           />
         </FormField>
+
+        {showNarratives && (
+          <div className="sm:col-span-2 lg:col-span-3">
+            <FormField
+              label="Assumption Narrative"
+              htmlFor="revenueNarrative"
+              helper="Document the basis for this growth assumption"
+            >
+              <textarea
+                id="revenueNarrative"
+                rows={2}
+                className={inputStyles}
+                placeholder="e.g., Based on 3-year historical average..."
+                value={assumptionMeta.revenueGrowth.narrative}
+                onChange={(e) => updateNarrative("revenueGrowth", e.target.value)}
+              />
+            </FormField>
+          </div>
+        )}
+
+        <div className="sm:col-span-2 lg:col-span-3">
+          <TriangulationPanel type="strategic" title="Growth Assumption Impact">
+            This growth rate drives {formValues.yearsForward || 5}-year revenue projections.
+            Consider: What market conditions would validate or invalidate this assumption?
+          </TriangulationPanel>
+        </div>
       </FormSection>
 
-      {/* Costs Section */}
-      <FormSection title="Costs">
+      {/* Cost Structure Assumptions */}
+      <FormSection
+        title="Cost Structure Assumptions"
+        action={
+          <ConfidenceIndicator
+            level={assumptionMeta.costStructure.confidence}
+            onChange={(c) => updateConfidence("costStructure", c)}
+          />
+        }
+      >
         <FormField
           label="Current COGS"
           htmlFor="currentCOGS"
@@ -277,8 +401,16 @@ export function InputsForm() {
         </FormField>
       </FormSection>
 
-      {/* Capital Section */}
-      <FormSection title="Capital">
+      {/* Capital Assumptions */}
+      <FormSection
+        title="Capital Assumptions"
+        action={
+          <ConfidenceIndicator
+            level={assumptionMeta.capital.confidence}
+            onChange={(c) => updateConfidence("capital", c)}
+          />
+        }
+      >
         <FormField
           label="Annual Capex"
           htmlFor="annualCapex"
@@ -296,6 +428,13 @@ export function InputsForm() {
             {...register("annualCapex")}
           />
         </FormField>
+
+        <div className="sm:col-span-2 lg:col-span-3">
+          <TriangulationPanel type="risk" title="Capital Sensitivity">
+            Capex directly reduces free cash flow. Significant changes may indicate
+            strategic pivots or capacity constraints worth reviewing.
+          </TriangulationPanel>
+        </div>
       </FormSection>
 
       {/* Working Capital Section */}
@@ -355,8 +494,16 @@ export function InputsForm() {
         </FormField>
       </FormSection>
 
-      {/* Financing Section */}
-      <FormSection title="Financing">
+      {/* Financing Assumptions */}
+      <FormSection
+        title="Financing Assumptions"
+        action={
+          <ConfidenceIndicator
+            level={assumptionMeta.financing.confidence}
+            onChange={(c) => updateConfidence("financing", c)}
+          />
+        }
+      >
         <FormField
           label="Debt Outstanding"
           htmlFor="debtOutstanding"
