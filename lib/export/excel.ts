@@ -408,7 +408,7 @@ function createForecastSheet(
     ['Operating Margin', y => (y.ebit / y.revenue) * 100, { type: 'percent' }],
     ['Interest', y => y.interest, { type: 'currency' }],
     ['EBT', y => y.ebt, { type: 'currency' }],
-    ['Taxes', y => y.taxes, { type: 'currency' }],
+    ['Taxes', y => y.tax, { type: 'currency' }],
     ['Net Income', y => y.netIncome, { type: 'currency' }],
     ['Net Margin', y => (y.netIncome / y.revenue) * 100, { type: 'percent' }],
   ];
