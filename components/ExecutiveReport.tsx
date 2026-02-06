@@ -72,6 +72,7 @@ export function ExecutiveReport({ model }: ExecutiveReportProps) {
   const { dcfValuation, yearlyFinancials, averageRatios: ratios } = baseCase;
 
   // Get scenario data
+  const baseScenario = scenarios.find(s => s.scenarioName.toLowerCase().includes("base")) || scenarios[0];
   const selectedScenarioData = scenarios.find(s => s.scenarioName.toLowerCase().includes(selectedScenario)) || scenarios[0];
 
   return (
@@ -265,7 +266,7 @@ export function ExecutiveReport({ model }: ExecutiveReportProps) {
             <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-5 print:border-gray-300 print:bg-gray-50">
               <p className="text-sm text-zinc-400 print:text-gray-600">IRR</p>
               <p className="mt-1 text-xl font-bold text-white print:text-black">
-                {formatPercent(dcfValuation.irr)}
+                {formatPercent(baseScenario.irr)}
               </p>
             </div>
           </div>
@@ -277,7 +278,7 @@ export function ExecutiveReport({ model }: ExecutiveReportProps) {
               <div>
                 <p className="text-xs text-zinc-500 print:text-gray-500">PV of Free Cash Flows</p>
                 <p className="text-lg font-semibold text-white print:text-black">
-                  {formatCurrency(dcfValuation.pvFreeCashFlows, profile.currency)}
+                  {formatCurrency(dcfValuation.sumPVFCF, profile.currency)}
                 </p>
               </div>
               <div>
@@ -317,7 +318,7 @@ export function ExecutiveReport({ model }: ExecutiveReportProps) {
                 </thead>
                 <tbody>
                   {dcfValuation.sensitivityMatrix.map((row, rowIdx) => {
-                    const wacc = (model.valuation.wacc - 2 + rowIdx) / 100;
+                    const wacc = dcfValuation.wacc - 0.02 + (rowIdx * 0.01);
                     return (
                       <tr key={rowIdx} className="border-t border-zinc-800 print:border-gray-200">
                         <td className="py-2 px-3 text-zinc-400 print:text-gray-600">
@@ -368,7 +369,7 @@ export function ExecutiveReport({ model }: ExecutiveReportProps) {
                     <td className="py-3 px-4 text-zinc-300 print:text-gray-700">Revenue</td>
                     {yearlyFinancials.map((yf) => (
                       <td key={yf.year} className="py-3 px-4 text-right tabular-nums text-zinc-300 print:text-gray-700">
-                        {formatCurrency(yf.incomeStatement.revenue, profile.currency)}
+                        {formatCurrency(yf.revenue, profile.currency)}
                       </td>
                     ))}
                   </tr>
@@ -376,7 +377,7 @@ export function ExecutiveReport({ model }: ExecutiveReportProps) {
                     <td className="py-3 px-4 text-zinc-300 print:text-gray-700">Gross Profit</td>
                     {yearlyFinancials.map((yf) => (
                       <td key={yf.year} className="py-3 px-4 text-right tabular-nums text-zinc-300 print:text-gray-700">
-                        {formatCurrency(yf.incomeStatement.grossProfit, profile.currency)}
+                        {formatCurrency(yf.grossProfit, profile.currency)}
                       </td>
                     ))}
                   </tr>
@@ -384,7 +385,7 @@ export function ExecutiveReport({ model }: ExecutiveReportProps) {
                     <td className="py-3 px-4 text-zinc-300 print:text-gray-700">EBITDA</td>
                     {yearlyFinancials.map((yf) => (
                       <td key={yf.year} className="py-3 px-4 text-right tabular-nums text-zinc-300 print:text-gray-700">
-                        {formatCurrency(yf.incomeStatement.ebitda, profile.currency)}
+                        {formatCurrency(yf.ebitda, profile.currency)}
                       </td>
                     ))}
                   </tr>
@@ -392,7 +393,7 @@ export function ExecutiveReport({ model }: ExecutiveReportProps) {
                     <td className="py-3 px-4 text-zinc-300 print:text-gray-700">EBIT</td>
                     {yearlyFinancials.map((yf) => (
                       <td key={yf.year} className="py-3 px-4 text-right tabular-nums text-zinc-300 print:text-gray-700">
-                        {formatCurrency(yf.incomeStatement.ebit, profile.currency)}
+                        {formatCurrency(yf.ebit, profile.currency)}
                       </td>
                     ))}
                   </tr>
@@ -400,7 +401,7 @@ export function ExecutiveReport({ model }: ExecutiveReportProps) {
                     <td className="py-3 px-4 font-medium text-white print:text-black">Net Income</td>
                     {yearlyFinancials.map((yf) => (
                       <td key={yf.year} className="py-3 px-4 text-right tabular-nums font-medium text-white print:text-black">
-                        {formatCurrency(yf.incomeStatement.netIncome, profile.currency)}
+                        {formatCurrency(yf.netIncome, profile.currency)}
                       </td>
                     ))}
                   </tr>
@@ -437,11 +438,11 @@ export function ExecutiveReport({ model }: ExecutiveReportProps) {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-zinc-400 print:text-gray-600">Net Margin</span>
-                  <span className="text-sm font-medium text-white print:text-black">{formatPercent(ratios.netProfitMargin)}</span>
+                  <span className="text-sm font-medium text-white print:text-black">{formatPercent(ratios.netMargin)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-zinc-400 print:text-gray-600">ROIC</span>
-                  <span className="text-sm font-medium text-white print:text-black">{formatPercent(ratios.roic)}</span>
+                  <span className="text-sm font-medium text-white print:text-black">{formatPercent(ratios.returnOnInvestedCapital)}</span>
                 </div>
               </div>
             </div>
@@ -491,11 +492,11 @@ export function ExecutiveReport({ model }: ExecutiveReportProps) {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-zinc-400 print:text-gray-600">Receivables Days</span>
-                  <span className="text-sm font-medium text-white print:text-black">{ratios.receivablesDays.toFixed(0)}</span>
+                  <span className="text-sm font-medium text-white print:text-black">{ratios.daysSalesOutstanding.toFixed(0)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-zinc-400 print:text-gray-600">Payables Days</span>
-                  <span className="text-sm font-medium text-white print:text-black">{ratios.payablesDays.toFixed(0)}</span>
+                  <span className="text-sm font-medium text-white print:text-black">{ratios.daysPayableOutstanding.toFixed(0)}</span>
                 </div>
               </div>
             </div>

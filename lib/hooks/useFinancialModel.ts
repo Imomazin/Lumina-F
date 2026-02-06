@@ -74,8 +74,8 @@ export function useFinancialModel() {
     const newModel: FinancialModel = {
       ...defaultModel,
       id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
       profile: {
         ...defaultModel.profile,
         companyName: companyName || defaultModel.profile.companyName,
@@ -91,8 +91,8 @@ export function useFinancialModel() {
     if (!m) return false;
     return (
       m.profile.companyName.length > 0 &&
-      m.revenue.streams.length > 0 &&
-      m.revenue.streams.some(s => s.baseAmount > 0)
+      m.incomeStatement.revenueStreams.length > 0 &&
+      m.incomeStatement.revenueStreams.some(s => s.baseAmount > 0)
     );
   }, []);
 

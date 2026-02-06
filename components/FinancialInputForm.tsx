@@ -735,6 +735,7 @@ function CostsSection({
       costType: 'variable',
       baseAmount: 0,
       revenuePercent: 0,
+      inflationLinked: false,
     };
     onChange('costItems', [...costItems, newItem]);
   };
