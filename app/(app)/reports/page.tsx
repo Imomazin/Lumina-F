@@ -71,7 +71,7 @@ export default function ReportsPage() {
                 Executive <span className="text-amber-400">Report</span>
               </h1>
               <p className="text-sm text-zinc-400 mt-1">
-                {model.profile.companyName} • {model.horizon.years}-Year Financial Projection
+                {model.profile.companyName} • {model.profile.forecastYears}-Year Financial Projection
               </p>
             </div>
             <div className="flex items-center gap-4">

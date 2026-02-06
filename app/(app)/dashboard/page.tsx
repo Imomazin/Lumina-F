@@ -104,10 +104,10 @@ export default function DashboardPage() {
           <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
             <p className="text-sm text-zinc-400">Projection</p>
             <p className="mt-1 text-xl font-semibold text-white">
-              {model ? `${model.horizon.years} Years` : "—"}
+              {model ? `${model.profile.forecastYears} Years` : "—"}
             </p>
             <p className="mt-1 text-sm text-zinc-500">
-              {model ? `Starting ${model.horizon.startYear}` : "No forecast configured"}
+              {model ? `Starting ${model.profile.baseYear}` : "No forecast configured"}
             </p>
           </div>
         </div>

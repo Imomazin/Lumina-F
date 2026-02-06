@@ -118,7 +118,7 @@ export function ExecutiveReport({ model }: ExecutiveReportProps) {
             </h2>
             <p className="text-lg text-gray-600 mb-8">{profile.industry}</p>
             <div className="text-gray-600 space-y-2">
-              <p>{model.horizon.years}-Year Financial Projection</p>
+              <p>{model.profile.forecastYears}-Year Financial Projection</p>
               <p>Currency: {profile.currency}</p>
               <p>Prepared: {currentDate}</p>
             </div>
@@ -165,7 +165,7 @@ export function ExecutiveReport({ model }: ExecutiveReportProps) {
                 {executiveSummary.investmentRating}
               </p>
               <p className="mt-2 text-xs text-zinc-500 print:text-gray-500">
-                Based on {model.horizon.years}-year DCF analysis
+                Based on {model.profile.forecastYears}-year DCF analysis
               </p>
             </div>
             <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-5 print:border-gray-300 print:bg-gray-50">

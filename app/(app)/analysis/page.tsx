@@ -73,7 +73,7 @@ export default function AnalysisPage() {
                 Financial <span className="text-amber-400">Analysis</span>
               </h1>
               <p className="text-sm text-zinc-400 mt-1">
-                {model.profile.companyName} • {model.horizon.years}-Year Projection
+                {model.profile.companyName} • {model.profile.forecastYears}-Year Projection
               </p>
             </div>
             <div className="flex items-center gap-4">
