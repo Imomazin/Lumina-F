@@ -288,7 +288,7 @@ export default function DashboardPage() {
               </div>
               <div>
                 <p className="text-xs text-zinc-500 uppercase tracking-wider">Revenue Streams</p>
-                <p className="mt-1 font-medium text-white">{model.revenue.streams.length}</p>
+                <p className="mt-1 font-medium text-white">{model.incomeStatement.revenueStreams.length}</p>
               </div>
               <div>
                 <p className="text-xs text-zinc-500 uppercase tracking-wider">Scenarios</p>
