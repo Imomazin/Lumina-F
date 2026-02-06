@@ -1,13 +1,20 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useMemo } from "react";
 import { AnalysisDashboard } from "@/components/AnalysisDashboard";
 import { useFinancialModel } from "@/lib/hooks/useFinancialModel";
+import { runFinancialAnalysis } from "@/lib/analysis/financial-engine";
 import Link from "next/link";
 
 export default function AnalysisPage() {
-  const router = useRouter();
   const { model, isLoading, isModelValid } = useFinancialModel();
+
+  const analysis = useMemo(() => {
+    if (model && isModelValid(model)) {
+      return runFinancialAnalysis(model);
+    }
+    return null;
+  }, [model, isModelValid]);
 
   if (isLoading) {
     return (
@@ -18,7 +25,7 @@ export default function AnalysisPage() {
   }
 
   // Empty state - no model or invalid model
-  if (!model || !isModelValid(model)) {
+  if (!model || !isModelValid(model) || !analysis) {
     return (
       <div className="min-h-screen bg-[#0a0a0a]">
         <div className="max-w-7xl mx-auto px-6 py-8">
@@ -96,7 +103,7 @@ export default function AnalysisPage() {
 
       {/* Dashboard */}
       <div className="max-w-7xl mx-auto px-6 py-8">
-        <AnalysisDashboard model={model} />
+        <AnalysisDashboard analysis={analysis} currency={model.profile.currency} />
       </div>
     </div>
   );
