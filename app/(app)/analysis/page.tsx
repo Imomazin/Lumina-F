@@ -1,13 +1,15 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { AnalysisDashboard } from "@/components/AnalysisDashboard";
+import { AIAssistant, AIChatButton } from "@/components/AIAssistant";
 import { useFinancialModel } from "@/lib/hooks/useFinancialModel";
 import { runFinancialAnalysis } from "@/lib/analysis/financial-engine";
 import Link from "next/link";
 
 export default function AnalysisPage() {
   const { model, isLoading, isModelValid } = useFinancialModel();
+  const [showAIChat, setShowAIChat] = useState(false);
 
   const analysis = useMemo(() => {
     if (model && isModelValid(model)) {
@@ -65,6 +67,15 @@ export default function AnalysisPage() {
             </div>
           </div>
         </div>
+
+        {/* AI Chat Button even in empty state */}
+        <AIChatButton onClick={() => setShowAIChat(true)} />
+        <AIAssistant
+          model={model}
+          analysis={null}
+          isOpen={showAIChat}
+          onClose={() => setShowAIChat(false)}
+        />
       </div>
     );
   }
@@ -84,6 +95,14 @@ export default function AnalysisPage() {
               </p>
             </div>
             <div className="flex items-center gap-4">
+              {/* AI Assistant Quick Access */}
+              <button
+                onClick={() => setShowAIChat(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-black font-medium rounded-lg hover:from-amber-400 hover:to-orange-400 transition-all text-sm"
+              >
+                <span className="text-lg">✨</span>
+                Ask AI
+              </button>
               <Link
                 href="/inputs"
                 className="px-4 py-2 border border-zinc-700 text-zinc-300 rounded-lg hover:bg-zinc-800 transition-colors text-sm"
@@ -92,7 +111,7 @@ export default function AnalysisPage() {
               </Link>
               <Link
                 href="/reports"
-                className="px-4 py-2 bg-amber-500 text-black font-medium rounded-lg hover:bg-amber-400 transition-colors text-sm"
+                className="px-4 py-2 bg-zinc-700 text-white font-medium rounded-lg hover:bg-zinc-600 transition-colors text-sm"
               >
                 Generate Report →
               </Link>
@@ -105,6 +124,17 @@ export default function AnalysisPage() {
       <div className="max-w-7xl mx-auto px-6 py-8">
         <AnalysisDashboard analysis={analysis} currency={model.profile.currency} />
       </div>
+
+      {/* AI Chat Button */}
+      <AIChatButton onClick={() => setShowAIChat(true)} />
+
+      {/* AI Assistant Modal - with full analysis context */}
+      <AIAssistant
+        model={model}
+        analysis={analysis}
+        isOpen={showAIChat}
+        onClose={() => setShowAIChat(false)}
+      />
     </div>
   );
 }
