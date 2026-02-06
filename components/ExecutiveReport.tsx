@@ -29,19 +29,26 @@ function formatPercent(value: number): string {
 
 function getRatingColor(rating: string): string {
   const colors: Record<string, string> = {
-    "Strong Buy": "text-green-600",
-    "Buy": "text-green-500",
-    "Hold": "text-yellow-600",
-    "Sell": "text-red-500",
-    "Strong Sell": "text-red-600"
+    strong_buy: "text-green-600",
+    buy: "text-green-500",
+    hold: "text-yellow-600",
+    sell: "text-red-500",
+    strong_sell: "text-red-600"
   };
   return colors[rating] || "text-gray-600";
 }
 
-function getConfidenceColor(confidence: number): string {
-  if (confidence >= 80) return "text-green-600";
-  if (confidence >= 60) return "text-yellow-600";
-  return "text-red-500";
+function formatRating(rating: string): string {
+  return rating.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function getConfidenceColor(confidence: string): string {
+  const colors: Record<string, string> = {
+    high: "text-green-600",
+    medium: "text-yellow-600",
+    low: "text-red-500"
+  };
+  return colors[confidence] || "text-gray-600";
 }
 
 export function ExecutiveReport({ model }: ExecutiveReportProps) {
@@ -61,10 +68,11 @@ export function ExecutiveReport({ model }: ExecutiveReportProps) {
   });
 
   const { profile } = model;
-  const { dcfValuation, scenarios, executiveSummary, yearlyFinancials, ratios, industryBenchmark } = analysis;
+  const { baseCase, scenarios, executiveSummary, comparableAnalysis } = analysis;
+  const { dcfValuation, yearlyFinancials, averageRatios: ratios } = baseCase;
 
   // Get scenario data
-  const selectedScenarioData = scenarios.find(s => s.name.toLowerCase().includes(selectedScenario)) || scenarios[0];
+  const selectedScenarioData = scenarios.find(s => s.scenarioName.toLowerCase().includes(selectedScenario)) || scenarios[0];
 
   return (
     <>
@@ -146,7 +154,7 @@ export function ExecutiveReport({ model }: ExecutiveReportProps) {
               <p className="mt-1">{profile.industry}</p>
               <div className="mt-2 flex items-center justify-end gap-2">
                 <span className={`text-lg font-bold ${getRatingColor(executiveSummary.investmentRating)} print:text-black`}>
-                  {executiveSummary.investmentRating}
+                  {formatRating(executiveSummary.investmentRating)}
                 </span>
               </div>
             </div>
@@ -162,7 +170,7 @@ export function ExecutiveReport({ model }: ExecutiveReportProps) {
             <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-5 print:border-gray-300 print:bg-gray-50">
               <p className="text-sm text-zinc-400 print:text-gray-600">Rating</p>
               <p className={`mt-1 text-2xl font-bold ${getRatingColor(executiveSummary.investmentRating)} print:text-black`}>
-                {executiveSummary.investmentRating}
+                {formatRating(executiveSummary.investmentRating)}
               </p>
               <p className="mt-2 text-xs text-zinc-500 print:text-gray-500">
                 Based on {model.profile.forecastYears}-year DCF analysis
@@ -170,8 +178,8 @@ export function ExecutiveReport({ model }: ExecutiveReportProps) {
             </div>
             <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-5 print:border-gray-300 print:bg-gray-50">
               <p className="text-sm text-zinc-400 print:text-gray-600">Confidence Level</p>
-              <p className={`mt-1 text-2xl font-bold ${getConfidenceColor(executiveSummary.confidenceLevel)} print:text-black`}>
-                {executiveSummary.confidenceLevel}%
+              <p className={`mt-1 text-2xl font-bold capitalize ${getConfidenceColor(executiveSummary.confidenceLevel)} print:text-black`}>
+                {executiveSummary.confidenceLevel}
               </p>
               <p className="mt-2 text-xs text-zinc-500 print:text-gray-500">
                 Model reliability score
@@ -195,28 +203,33 @@ export function ExecutiveReport({ model }: ExecutiveReportProps) {
             Executive Summary
           </h2>
           <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-6 print:border-gray-300 print:bg-gray-50">
-            <p className="text-zinc-300 leading-relaxed print:text-gray-700">
-              {executiveSummary.summary}
-            </p>
+            <ul className="space-y-2 text-zinc-300 print:text-gray-700">
+              {executiveSummary.keyHighlights.map((highlight, idx) => (
+                <li key={idx} className="flex gap-2">
+                  <span className="text-amber-400">•</span>
+                  {highlight}
+                </li>
+              ))}
+            </ul>
             <div className="mt-6 grid gap-4 md:grid-cols-2">
               <div>
-                <h4 className="text-sm font-medium text-green-400 print:text-green-700 mb-2">Key Strengths</h4>
+                <h4 className="text-sm font-medium text-green-400 print:text-green-700 mb-2">Strengths & Opportunities</h4>
                 <ul className="space-y-1">
-                  {executiveSummary.keyStrengths.map((strength, idx) => (
+                  {executiveSummary.strengthsOpportunities.map((item, idx) => (
                     <li key={idx} className="flex gap-2 text-sm text-zinc-400 print:text-gray-600">
                       <span className="text-green-400 print:text-green-600">+</span>
-                      {strength}
+                      {item}
                     </li>
                   ))}
                 </ul>
               </div>
               <div>
-                <h4 className="text-sm font-medium text-red-400 print:text-red-700 mb-2">Key Risks</h4>
+                <h4 className="text-sm font-medium text-red-400 print:text-red-700 mb-2">Risks & Threats</h4>
                 <ul className="space-y-1">
-                  {executiveSummary.keyRisks.map((risk, idx) => (
+                  {executiveSummary.risksThreats.map((item, idx) => (
                     <li key={idx} className="flex gap-2 text-sm text-zinc-400 print:text-gray-600">
                       <span className="text-red-400 print:text-red-600">!</span>
-                      {risk}
+                      {item}
                     </li>
                   ))}
                 </ul>
@@ -489,61 +502,33 @@ export function ExecutiveReport({ model }: ExecutiveReportProps) {
           </div>
         </section>
 
-        {/* Industry Benchmark */}
-        {industryBenchmark && (
+        {/* Industry Comparison */}
+        {comparableAnalysis && comparableAnalysis.metrics.length > 0 && (
           <section className="print:break-inside-avoid">
             <h2 className="mb-4 text-lg font-semibold text-white print:text-black">
-              Industry Benchmark Comparison
+              Industry Comparison
             </h2>
             <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-5 print:border-gray-300 print:bg-gray-50">
               <p className="text-sm text-zinc-400 print:text-gray-600 mb-4">
-                Comparing against {profile.industry} industry benchmarks
+                Comparing against {comparableAnalysis.industry} industry benchmarks
               </p>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-zinc-700 print:border-gray-300">
-                      <th className="py-2 px-3 text-left text-zinc-500 print:text-gray-500">Metric</th>
-                      <th className="py-2 px-3 text-right text-zinc-500 print:text-gray-500">Company</th>
-                      <th className="py-2 px-3 text-right text-zinc-500 print:text-gray-500">Industry</th>
-                      <th className="py-2 px-3 text-right text-zinc-500 print:text-gray-500">vs Industry</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-zinc-800 print:divide-gray-200">
-                    <tr>
-                      <td className="py-2 px-3 text-zinc-300 print:text-gray-700">Gross Margin</td>
-                      <td className="py-2 px-3 text-right text-zinc-300 print:text-gray-700">{formatPercent(ratios.grossMargin)}</td>
-                      <td className="py-2 px-3 text-right text-zinc-400 print:text-gray-600">{formatPercent(industryBenchmark.grossMargin)}</td>
-                      <td className={`py-2 px-3 text-right font-medium ${ratios.grossMargin >= industryBenchmark.grossMargin ? "text-green-400 print:text-green-600" : "text-red-400 print:text-red-600"}`}>
-                        {ratios.grossMargin >= industryBenchmark.grossMargin ? "+" : ""}{((ratios.grossMargin - industryBenchmark.grossMargin) * 100).toFixed(1)}pp
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 px-3 text-zinc-300 print:text-gray-700">EBITDA Margin</td>
-                      <td className="py-2 px-3 text-right text-zinc-300 print:text-gray-700">{formatPercent(ratios.ebitdaMargin)}</td>
-                      <td className="py-2 px-3 text-right text-zinc-400 print:text-gray-600">{formatPercent(industryBenchmark.ebitdaMargin)}</td>
-                      <td className={`py-2 px-3 text-right font-medium ${ratios.ebitdaMargin >= industryBenchmark.ebitdaMargin ? "text-green-400 print:text-green-600" : "text-red-400 print:text-red-600"}`}>
-                        {ratios.ebitdaMargin >= industryBenchmark.ebitdaMargin ? "+" : ""}{((ratios.ebitdaMargin - industryBenchmark.ebitdaMargin) * 100).toFixed(1)}pp
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 px-3 text-zinc-300 print:text-gray-700">Net Margin</td>
-                      <td className="py-2 px-3 text-right text-zinc-300 print:text-gray-700">{formatPercent(ratios.netProfitMargin)}</td>
-                      <td className="py-2 px-3 text-right text-zinc-400 print:text-gray-600">{formatPercent(industryBenchmark.netMargin)}</td>
-                      <td className={`py-2 px-3 text-right font-medium ${ratios.netProfitMargin >= industryBenchmark.netMargin ? "text-green-400 print:text-green-600" : "text-red-400 print:text-red-600"}`}>
-                        {ratios.netProfitMargin >= industryBenchmark.netMargin ? "+" : ""}{((ratios.netProfitMargin - industryBenchmark.netMargin) * 100).toFixed(1)}pp
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 px-3 text-zinc-300 print:text-gray-700">ROIC</td>
-                      <td className="py-2 px-3 text-right text-zinc-300 print:text-gray-700">{formatPercent(ratios.roic)}</td>
-                      <td className="py-2 px-3 text-right text-zinc-400 print:text-gray-600">{formatPercent(industryBenchmark.roic)}</td>
-                      <td className={`py-2 px-3 text-right font-medium ${ratios.roic >= industryBenchmark.roic ? "text-green-400 print:text-green-600" : "text-red-400 print:text-red-600"}`}>
-                        {ratios.roic >= industryBenchmark.roic ? "+" : ""}{((ratios.roic - industryBenchmark.roic) * 100).toFixed(1)}pp
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+              <div className="grid gap-4 md:grid-cols-2">
+                {comparableAnalysis.metrics.slice(0, 4).map((metric, idx) => (
+                  <div key={idx} className="flex justify-between items-center p-3 rounded bg-zinc-800/50 print:bg-gray-100">
+                    <div>
+                      <p className="text-sm text-zinc-400 print:text-gray-600">Percentile Rank</p>
+                      <p className="text-lg font-semibold text-white print:text-black">{metric.percentile.toFixed(0)}th</p>
+                    </div>
+                    <div className={`px-2 py-1 rounded text-xs font-medium ${
+                      metric.rating === 'excellent' ? 'bg-green-500/20 text-green-400' :
+                      metric.rating === 'above_average' ? 'bg-blue-500/20 text-blue-400' :
+                      metric.rating === 'average' ? 'bg-yellow-500/20 text-yellow-400' :
+                      'bg-red-500/20 text-red-400'
+                    } print:bg-gray-200 print:text-gray-700`}>
+                      {metric.rating.replace('_', ' ')}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </section>
@@ -561,30 +546,30 @@ export function ExecutiveReport({ model }: ExecutiveReportProps) {
                   <tr className="border-b border-zinc-800 print:border-gray-300">
                     <th className="py-3 px-4 text-left font-medium text-zinc-400 print:text-gray-600">Scenario</th>
                     <th className="py-3 px-4 text-right font-medium text-zinc-400 print:text-gray-600">Probability</th>
-                    <th className="py-3 px-4 text-right font-medium text-zinc-400 print:text-gray-600">Revenue (Final)</th>
-                    <th className="py-3 px-4 text-right font-medium text-zinc-400 print:text-gray-600">EBITDA Margin</th>
+                    <th className="py-3 px-4 text-right font-medium text-zinc-400 print:text-gray-600">NPV</th>
+                    <th className="py-3 px-4 text-right font-medium text-zinc-400 print:text-gray-600">IRR</th>
                     <th className="py-3 px-4 text-right font-medium text-zinc-400 print:text-gray-600">Enterprise Value</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-800 print:divide-gray-200">
                   {scenarios.map((scenario) => {
-                    const isBase = scenario.name.toLowerCase().includes("base");
+                    const isBase = scenario.scenarioType === "base";
                     return (
-                      <tr key={scenario.name} className={isBase ? "bg-amber-500/10 print:bg-amber-50" : ""}>
+                      <tr key={scenario.scenarioId} className={isBase ? "bg-amber-500/10 print:bg-amber-50" : ""}>
                         <td className="py-3 px-4 text-zinc-300 print:text-gray-700 font-medium">
-                          {scenario.name}
+                          {scenario.scenarioName}
                         </td>
                         <td className="py-3 px-4 text-right text-zinc-400 print:text-gray-600">
                           {formatPercent(scenario.probability)}
                         </td>
                         <td className="py-3 px-4 text-right tabular-nums text-zinc-300 print:text-gray-700">
-                          {formatCurrency(scenario.metrics.finalYearRevenue, profile.currency)}
+                          {formatCurrency(scenario.npv, profile.currency)}
                         </td>
                         <td className="py-3 px-4 text-right tabular-nums text-zinc-300 print:text-gray-700">
-                          {formatPercent(scenario.metrics.avgEbitdaMargin)}
+                          {formatPercent(scenario.irr)}
                         </td>
                         <td className="py-3 px-4 text-right tabular-nums font-medium text-white print:text-black">
-                          {formatCurrency(scenario.metrics.enterpriseValue, profile.currency)}
+                          {formatCurrency(scenario.dcfValuation.enterpriseValue, profile.currency)}
                         </td>
                       </tr>
                     );
@@ -596,18 +581,18 @@ export function ExecutiveReport({ model }: ExecutiveReportProps) {
                     <td className="py-3 px-4 text-right text-zinc-400 print:text-gray-600">100%</td>
                     <td className="py-3 px-4 text-right tabular-nums text-amber-400 print:text-amber-700">
                       {formatCurrency(
-                        scenarios.reduce((sum, s) => sum + s.metrics.finalYearRevenue * s.probability, 0),
+                        scenarios.reduce((sum, s) => sum + s.npv * s.probability, 0),
                         profile.currency
                       )}
                     </td>
                     <td className="py-3 px-4 text-right tabular-nums text-amber-400 print:text-amber-700">
                       {formatPercent(
-                        scenarios.reduce((sum, s) => sum + s.metrics.avgEbitdaMargin * s.probability, 0)
+                        scenarios.reduce((sum, s) => sum + s.irr * s.probability, 0)
                       )}
                     </td>
                     <td className="py-3 px-4 text-right tabular-nums text-amber-400 print:text-amber-700">
                       {formatCurrency(
-                        scenarios.reduce((sum, s) => sum + s.metrics.enterpriseValue * s.probability, 0),
+                        scenarios.reduce((sum, s) => sum + s.dcfValuation.enterpriseValue * s.probability, 0),
                         profile.currency
                       )}
                     </td>
