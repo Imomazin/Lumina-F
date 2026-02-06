@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { FinancialModel, createDefaultModel } from "@/lib/models/financial-model";
+import { FinancialModel, createDefaultFinancialModel } from "@/lib/models/financial-model";
 
 const STORAGE_KEY = "lumina-f-financial-model";
 
@@ -70,7 +70,17 @@ export function useFinancialModel() {
 
   // Create new model with defaults
   const createNewModel = useCallback((companyName?: string) => {
-    const newModel = createDefaultModel(companyName);
+    const defaultModel = createDefaultFinancialModel();
+    const newModel: FinancialModel = {
+      ...defaultModel,
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      profile: {
+        ...defaultModel.profile,
+        companyName: companyName || defaultModel.profile.companyName,
+      },
+    };
     setModel(newModel);
     setIsDirty(true);
     return newModel;
