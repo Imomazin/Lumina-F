@@ -118,25 +118,25 @@ export default function DashboardPage() {
             <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-5">
               <p className="text-xs text-amber-400/70 uppercase tracking-wider">Enterprise Value</p>
               <p className="mt-2 text-2xl font-bold text-amber-400">
-                {formatCurrency(analysis.dcfValuation.enterpriseValue, model.profile.currency)}
+                {formatCurrency(analysis.baseCase.dcfValuation.enterpriseValue, model.profile.currency)}
               </p>
             </div>
             <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
               <p className="text-xs text-zinc-500 uppercase tracking-wider">Investment Rating</p>
-              <p className="mt-2 text-2xl font-bold text-white">
-                {analysis.executiveSummary.investmentRating}
+              <p className="mt-2 text-2xl font-bold text-white capitalize">
+                {analysis.executiveSummary.investmentRating.replace('_', ' ')}
               </p>
             </div>
             <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
               <p className="text-xs text-zinc-500 uppercase tracking-wider">WACC</p>
               <p className="mt-2 text-2xl font-bold text-white">
-                {formatPercent(analysis.dcfValuation.wacc)}
+                {formatPercent(analysis.baseCase.dcfValuation.wacc)}
               </p>
             </div>
             <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
-              <p className="text-xs text-zinc-500 uppercase tracking-wider">IRR</p>
+              <p className="text-xs text-zinc-500 uppercase tracking-wider">Equity Value</p>
               <p className="mt-2 text-2xl font-bold text-white">
-                {formatPercent(analysis.dcfValuation.irr)}
+                {formatCurrency(analysis.baseCase.dcfValuation.equityValue, model.profile.currency)}
               </p>
             </div>
           </div>
