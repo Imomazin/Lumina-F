@@ -1,7 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { createDemoFinancialModel, DEMO_COMPANY_INFO } from "@/lib/demo-data";
+
+const STORAGE_KEY = "lumina-f-financial-model";
 
 // 3D Cube Component with gold/amber colors for Lumina F
 function GoldenCube() {
@@ -73,6 +77,25 @@ function GoldenCube() {
 
 export default function LandingPage() {
   const [email, setEmail] = useState("");
+  const [isLoadingDemo, setIsLoadingDemo] = useState(false);
+  const router = useRouter();
+
+  const loadDemo = async () => {
+    setIsLoadingDemo(true);
+    try {
+      const demoModel = createDemoFinancialModel();
+      const stored = {
+        model: demoModel,
+        lastSaved: new Date().toISOString(),
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
+      // Navigate to analysis page to see outputs
+      router.push("/analysis");
+    } catch (error) {
+      console.error("Failed to load demo:", error);
+      setIsLoadingDemo(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white">
@@ -161,7 +184,32 @@ export default function LandingPage() {
                 </Link>
               </div>
 
-              <p className="mt-4 text-sm text-gray-500">
+              {/* Try Demo Button */}
+              <button
+                onClick={loadDemo}
+                disabled={isLoadingDemo}
+                className="mt-4 inline-flex items-center gap-2 text-sm text-amber-400 hover:text-amber-300 transition-colors disabled:opacity-50"
+              >
+                {isLoadingDemo ? (
+                  <>
+                    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Loading demo...
+                  </>
+                ) : (
+                  <>
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Try Demo Instantly - See {DEMO_COMPANY_INFO.name} Analysis
+                  </>
+                )}
+              </button>
+
+              <p className="mt-3 text-sm text-gray-500">
                 Free to start. No credit card required.
               </p>
             </div>
@@ -278,20 +326,25 @@ export default function LandingPage() {
             Join finance professionals who trust Lumina F for accurate projections and insights.
           </p>
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <button
+              onClick={loadDemo}
+              disabled={isLoadingDemo}
+              className="h-12 px-8 inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-amber-400 to-amber-500 text-black font-semibold hover:from-amber-300 hover:to-amber-400 transition-all shadow-lg shadow-amber-400/25 disabled:opacity-50"
+            >
+              {isLoadingDemo ? "Loading..." : "Try Live Demo"}
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </button>
             <Link
               href="/inputs"
-              className="h-12 px-8 inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-amber-400 to-amber-500 text-black font-semibold hover:from-amber-300 hover:to-amber-400 transition-all shadow-lg shadow-amber-400/25"
+              className="h-12 px-8 inline-flex items-center justify-center gap-2 rounded-lg border border-white/10 text-white font-medium hover:bg-white/5 transition-colors"
             >
-              Start Building
+              Build Your Own
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
-            </Link>
-            <Link
-              href="/dashboard"
-              className="h-12 px-8 inline-flex items-center justify-center gap-2 rounded-lg border border-white/10 text-white font-medium hover:bg-white/5 transition-colors"
-            >
-              View Dashboard
             </Link>
           </div>
         </div>
