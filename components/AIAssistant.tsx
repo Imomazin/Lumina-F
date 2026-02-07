@@ -265,7 +265,7 @@ function getContextualResponses(
   }
 
   // Questions about cash flow / FCF
-  if (lowerMessage.includes("cash flow") || lowerMessage.includes("fcf") || lowerMessage.includes("free cash")) {
+  if (lowerMessage.includes("cash") || lowerMessage.includes("fcf") || lowerMessage.includes("cashflow")) {
     if (hasAnalysis) {
       const fcf = analysis.baseCase.yearlyFinancials[0]?.freeCashFlow;
       const fcfCagr = analysis.baseCase.cagr.fcf;
