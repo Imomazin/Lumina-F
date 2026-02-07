@@ -106,7 +106,7 @@ function getContextualResponses(
   model?: FinancialModel | null,
   analysis?: AnalysisResult | null
 ): string[] {
-  const lowerMessage = message.toLowerCase();
+  const lowerMessage = message.toLowerCase().trim();
   const companyName = model?.profile.companyName || "your company";
   const currency = model?.profile.currency || "USD";
 
@@ -118,37 +118,231 @@ function getContextualResponses(
   const dcfValue = hasAnalysis ? analysis.baseCase.dcfValuation.equityValue : null;
   const rating = analysis?.executiveSummary?.investmentRating;
 
-  // Personality-specific greeting styles
-  const greetings: Record<string, string[]> = {
-    nova: [
-      "I've analyzed the data thoroughly. Here's what I found...",
-      "Based on my analysis, I can provide you with some insights...",
-      "Let me break this down for you professionally...",
-    ],
-    grok: [
-      "Alright, let's dive into the numbers! 🚀",
-      "Time for some real talk about your finances...",
-      "Here's the deal (and I'll try to make it fun)...",
-    ],
-    sage: [
-      "Ah, a wise question. Let me share some perspective...",
-      "In my experience, what matters most here is...",
-      "Consider this wisdom from the markets...",
-    ],
-    apex: [
-      "Running the numbers... Here's the quantitative breakdown:",
-      "The data indicates the following metrics...",
-      "Statistical analysis complete. Key findings:",
-    ],
-    spark: [
-      "Love it! Let's talk growth potential! ⚡",
-      "This is exciting stuff! Here's what I see...",
-      "Great question! Let me break down the opportunities...",
-    ],
-  };
+  // Helper to format currency
+  const formatCurr = (val: number) => new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency,
+    notation: 'compact',
+    maximumFractionDigits: 1
+  }).format(val);
 
-  // Questions about valuation
-  if (lowerMessage.includes("valuation") || lowerMessage.includes("worth") || lowerMessage.includes("value")) {
+  // Questions about DCF specifically
+  if (lowerMessage.includes("dcf") || lowerMessage.includes("discounted cash")) {
+    if (hasAnalysis && dcfValue) {
+      const dcf = analysis.baseCase.dcfValuation;
+      const terminalGrowth = analysis.model.valuationAssumptions.terminalGrowthRate;
+      const responses: Record<string, string[]> = {
+        nova: [
+          `**DCF Analysis for ${companyName}:**\n\n• Enterprise Value: **${formatCurr(dcf.enterpriseValue)}**\n• Equity Value: **${formatCurr(dcf.equityValue)}**\n• WACC: ${(dcf.wacc * 100).toFixed(2)}%\n• Terminal Growth: ${terminalGrowth.toFixed(1)}%\n• Terminal Value (PV): ${formatCurr(dcf.terminalValuePV)}\n• Sum of FCF (PV): ${formatCurr(dcf.sumPVFCF)}\n\nThe terminal value represents ${((dcf.terminalValuePV / dcf.enterpriseValue) * 100).toFixed(0)}% of total enterprise value.`,
+        ],
+        grok: [
+          `DCF breakdown time! 🧮\n\n**The big number:** ${formatCurr(dcf.equityValue)} equity value\n\nHow we got there:\n• WACC of ${(dcf.wacc * 100).toFixed(1)}% (your cost of capital)\n• Terminal growth at ${terminalGrowth.toFixed(1)}%\n• Enterprise Value: ${formatCurr(dcf.enterpriseValue)}\n\nTerminal value is ${((dcf.terminalValuePV / dcf.enterpriseValue) * 100).toFixed(0)}% of EV - ${dcf.terminalValuePV / dcf.enterpriseValue > 0.7 ? "pretty chunky, but normal for growth companies!" : "nicely balanced!"} 📊`,
+        ],
+        sage: [
+          `The Discounted Cash Flow method reveals the intrinsic value. For ${companyName}:\n\n• Intrinsic Equity Value: **${formatCurr(dcf.equityValue)}**\n• Cost of Capital (WACC): ${(dcf.wacc * 100).toFixed(2)}%\n\nRemember the wisdom: "Price is what you pay, value is what you get." The DCF tells us what the future cash flows are worth today. The terminal value (${((dcf.terminalValuePV / dcf.enterpriseValue) * 100).toFixed(0)}% of EV) assumes perpetual growth at ${terminalGrowth.toFixed(1)}%.`,
+        ],
+        apex: [
+          `**DCF Model Output:**\n\n| Metric | Value |\n|--------|-------|\n| Enterprise Value | ${formatCurr(dcf.enterpriseValue)} |\n| Equity Value | ${formatCurr(dcf.equityValue)} |\n| WACC | ${(dcf.wacc * 100).toFixed(3)}% |\n| Terminal Growth | ${terminalGrowth.toFixed(2)}% |\n| PV of FCF | ${formatCurr(dcf.sumPVFCF)} |\n| PV of Terminal | ${formatCurr(dcf.terminalValuePV)} |\n| TV/EV Ratio | ${((dcf.terminalValuePV / dcf.enterpriseValue) * 100).toFixed(1)}% |\n| Method | ${dcf.terminalMethod} |`,
+        ],
+        spark: [
+          `DCF deep dive! ⚡\n\n${companyName} is valued at **${formatCurr(dcf.equityValue)}**!\n\nThe breakdown:\n• We're discounting at ${(dcf.wacc * 100).toFixed(1)}% WACC\n• Terminal growth of ${terminalGrowth.toFixed(1)}%\n• EV comes to ${formatCurr(dcf.enterpriseValue)}\n\nThe future looks ${dcfValue > 0 ? "bright" : "challenging"} based on these projections! Want to run different scenarios? 🚀`,
+        ],
+      };
+      return responses[personality.id] || responses.nova;
+    }
+    return [`I'd love to walk you through the DCF analysis, but I need financial data first! Please complete the inputs or upload your financials, and I'll calculate a full discounted cash flow valuation for you.`];
+  }
+
+  // Questions about WACC
+  if (lowerMessage.includes("wacc") || lowerMessage.includes("cost of capital") || lowerMessage.includes("discount rate")) {
+    if (hasAnalysis) {
+      const wacc = analysis.baseCase.dcfValuation.wacc;
+      const responses: Record<string, string[]> = {
+        nova: [
+          `The Weighted Average Cost of Capital (WACC) for ${companyName} is **${(wacc * 100).toFixed(2)}%**.\n\nThis represents the blended cost of debt and equity financing, used to discount future cash flows. A ${wacc > 0.12 ? "higher WACC like this reflects higher perceived risk" : wacc > 0.08 ? "moderate WACC suggests balanced risk profile" : "lower WACC indicates lower perceived risk and cheaper financing"}.`,
+        ],
+        grok: [
+          `WACC attack! 💰 Your discount rate is **${(wacc * 100).toFixed(1)}%**\n\nThink of it as the "hurdle rate" - any investment needs to beat this to create value. ${wacc > 0.12 ? "It's on the higher side, meaning investors see some risk here." : wacc > 0.08 ? "Pretty standard - right in the middle of the road." : "Nice and low - cheaper capital means easier value creation!"}`,
+        ],
+        sage: [
+          `The WACC of **${(wacc * 100).toFixed(2)}%** represents the true cost of capital for ${companyName}. As the ancients of finance teach us, this is the minimum return the company must generate to satisfy all capital providers. ${wacc > 0.10 ? "A higher cost demands higher returns." : "A favorable rate provides runway for value creation."}`,
+        ],
+        apex: [
+          `**WACC Analysis:**\n• Calculated WACC: ${(wacc * 100).toFixed(3)}%\n• Risk Classification: ${wacc > 0.12 ? "High" : wacc > 0.08 ? "Moderate" : "Low"}\n• Impact: Each 1% change in WACC significantly affects terminal value\n\nSensitivity: Check the sensitivity matrix to see how WACC changes affect valuation.`,
+        ],
+        spark: [
+          `WACC check! ⚡ It's **${(wacc * 100).toFixed(1)}%**\n\n${wacc < 0.10 ? "That's actually pretty solid - means you can access capital efficiently!" : "A bit elevated, but that's normal for growth-stage companies!"} This is the rate we use to discount all those beautiful future cash flows back to today. Lower = better for valuation!`,
+        ],
+      };
+      return responses[personality.id] || responses.nova;
+    }
+  }
+
+  // Questions about IRR
+  if (lowerMessage.includes("irr") || lowerMessage.includes("internal rate of return")) {
+    if (hasAnalysis && analysis.scenarios.length > 0) {
+      const baseScenario = analysis.scenarios.find(s => s.scenarioType === 'base') || analysis.scenarios[0];
+      const irr = baseScenario.irr;
+      const responses: Record<string, string[]> = {
+        nova: [
+          `The Internal Rate of Return (IRR) for the base case is **${(irr * 100).toFixed(1)}%**.\n\n${irr > 0.20 ? "This is an excellent return that significantly exceeds typical cost of capital." : irr > 0.12 ? "This represents a solid return above most hurdle rates." : irr > 0.08 ? "This is a moderate return that should cover cost of capital." : "This return may be below hurdle rates - review assumptions."}\n\nCompare across scenarios to understand the range of potential outcomes.`,
+        ],
+        grok: [
+          `IRR check! 📈 You're looking at **${(irr * 100).toFixed(1)}%**\n\n${irr > 0.20 ? "Holy smokes, that's a banger return! 🔥" : irr > 0.12 ? "Solid! That'll make investors happy." : irr > 0.08 ? "Decent - covers the basics." : "Hmm, might want to revisit those projections..."}\n\nRemember: IRR is the rate that makes NPV = 0. Higher = better!`,
+        ],
+        sage: [
+          `The IRR of **${(irr * 100).toFixed(1)}%** tells us the true annualized return of this investment. ${irr > 0.15 ? "Such returns are the reward for patient, thoughtful investing." : "Remember, even modest returns compound magnificently over time."} Compare this to your opportunity cost - what else could this capital achieve?`,
+        ],
+        apex: [
+          `**IRR Calculation:**\n• Base Case IRR: ${(irr * 100).toFixed(2)}%\n• vs WACC (${(analysis.baseCase.dcfValuation.wacc * 100).toFixed(2)}%): ${irr > analysis.baseCase.dcfValuation.wacc ? "Positive spread ✓" : "Negative spread ✗"}\n• NPV Implication: ${irr > analysis.baseCase.dcfValuation.wacc ? "Value creating" : "Value destroying"}\n• Confidence: Check scenario analysis for IRR range`,
+        ],
+        spark: [
+          `IRR time! ⚡ **${(irr * 100).toFixed(1)}%** annual return!\n\n${irr > 0.20 ? "WOW! That's startup-tier returns! 🚀🚀🚀" : irr > 0.12 ? "Great potential here!" : "Room to grow, but hey, that's the opportunity!"}\n\nThis is the return that makes the math work - if you can actually hit these projections, you're golden!`,
+        ],
+      };
+      return responses[personality.id] || responses.nova;
+    }
+  }
+
+  // Questions about scenarios
+  if (lowerMessage.includes("scenario") || lowerMessage.includes("best case") || lowerMessage.includes("worst case") || lowerMessage.includes("bull") || lowerMessage.includes("bear")) {
+    if (hasAnalysis && analysis.scenarios) {
+      const scenarios = analysis.scenarios;
+      const baseEV = analysis.baseCase.dcfValuation.enterpriseValue;
+      const responses: Record<string, string[]> = {
+        nova: [
+          `**Scenario Analysis for ${companyName}:**\n\n${scenarios.map(s => {
+            const diff = ((s.dcfValuation.enterpriseValue - baseEV) / baseEV * 100);
+            return `• **${s.scenarioName}** (${s.probability}% prob): ${formatCurr(s.dcfValuation.equityValue)} equity value (${diff >= 0 ? '+' : ''}${diff.toFixed(0)}% vs base)`;
+          }).join('\n')}\n\n**Probability-Weighted Value:** ${formatCurr(scenarios.reduce((sum, s) => sum + s.dcfValuation.equityValue * (s.probability / 100), 0))}`,
+        ],
+        grok: [
+          `Let's look at the crystal ball! 🔮\n\n${scenarios.map(s => {
+            const emoji = s.scenarioName.toLowerCase().includes('bull') || s.scenarioName.toLowerCase().includes('best') ? '🚀' : s.scenarioName.toLowerCase().includes('bear') || s.scenarioName.toLowerCase().includes('worst') ? '😰' : '📊';
+            return `${emoji} **${s.scenarioName}**: ${formatCurr(s.dcfValuation.equityValue)} (${s.probability}% chance)`;
+          }).join('\n')}\n\nExpected value accounting for all scenarios: **${formatCurr(scenarios.reduce((sum, s) => sum + s.dcfValuation.equityValue * (s.probability / 100), 0))}**`,
+        ],
+        sage: [
+          `Wise investors always consider multiple futures. Here are the paths ahead:\n\n${scenarios.map(s => `• **${s.scenarioName}**: ${formatCurr(s.dcfValuation.equityValue)} (${s.probability}% likelihood)`).join('\n')}\n\nThe probability-weighted outcome is ${formatCurr(scenarios.reduce((sum, s) => sum + s.dcfValuation.equityValue * (s.probability / 100), 0))}. Plan for all scenarios, hope for the best.`,
+        ],
+        apex: [
+          `**Scenario Matrix:**\n\n| Scenario | Probability | Equity Value | IRR |\n|----------|-------------|--------------|-----|\n${scenarios.map(s => `| ${s.scenarioName} | ${s.probability}% | ${formatCurr(s.dcfValuation.equityValue)} | ${(s.irr * 100).toFixed(1)}% |`).join('\n')}\n\n**Expected Value:** ${formatCurr(scenarios.reduce((sum, s) => sum + s.dcfValuation.equityValue * (s.probability / 100), 0))}`,
+        ],
+        spark: [
+          `Scenario breakdown! ⚡\n\n${scenarios.map(s => {
+            const emoji = s.scenarioName.toLowerCase().includes('bull') || s.scenarioName.toLowerCase().includes('best') ? '🌟' : s.scenarioName.toLowerCase().includes('bear') || s.scenarioName.toLowerCase().includes('worst') ? '⚠️' : '📈';
+            return `${emoji} **${s.scenarioName}** (${s.probability}%): ${formatCurr(s.dcfValuation.equityValue)}`;
+          }).join('\n')}\n\nBig picture expected value: **${formatCurr(scenarios.reduce((sum, s) => sum + s.dcfValuation.equityValue * (s.probability / 100), 0))}**\n\nLove seeing the upside potential! 🚀`,
+        ],
+      };
+      return responses[personality.id] || responses.nova;
+    }
+  }
+
+  // Questions about ratios
+  if (lowerMessage.includes("ratio") || lowerMessage.includes("metrics") || lowerMessage.includes("kpi")) {
+    if (hasAnalysis) {
+      const ratios = analysis.baseCase.averageRatios;
+      const responses: Record<string, string[]> = {
+        nova: [
+          `**Key Financial Ratios for ${companyName}:**\n\n**Profitability:**\n• Gross Margin: ${(ratios.grossMargin * 100).toFixed(1)}%\n• EBITDA Margin: ${(ratios.ebitdaMargin * 100).toFixed(1)}%\n• Net Margin: ${(ratios.netMargin * 100).toFixed(1)}%\n• ROE: ${(ratios.returnOnEquity * 100).toFixed(1)}%\n\n**Leverage:**\n• Debt/EBITDA: ${ratios.debtToEbitda.toFixed(1)}x\n• Interest Coverage: ${ratios.interestCoverage.toFixed(1)}x\n\n**Liquidity:**\n• Current Ratio: ${ratios.currentRatio.toFixed(2)}x`,
+        ],
+        grok: [
+          `Ratio rundown! 📊\n\n**The money makers:**\n• Gross Margin: ${(ratios.grossMargin * 100).toFixed(0)}% ${ratios.grossMargin > 0.4 ? "💪" : ""}\n• EBITDA Margin: ${(ratios.ebitdaMargin * 100).toFixed(0)}% ${ratios.ebitdaMargin > 0.2 ? "🔥" : ""}\n• ROE: ${(ratios.returnOnEquity * 100).toFixed(0)}%\n\n**The safety checks:**\n• Debt/EBITDA: ${ratios.debtToEbitda.toFixed(1)}x ${ratios.debtToEbitda < 3 ? "✅" : "⚠️"}\n• Current Ratio: ${ratios.currentRatio.toFixed(1)}x ${ratios.currentRatio > 1.5 ? "✅" : "👀"}`,
+        ],
+        sage: [
+          `The ratios reveal the health of ${companyName}:\n\n• Gross Margin of ${(ratios.grossMargin * 100).toFixed(0)}% shows ${ratios.grossMargin > 0.3 ? "pricing power" : "competitive pressures"}\n• EBITDA Margin of ${(ratios.ebitdaMargin * 100).toFixed(0)}% indicates ${ratios.ebitdaMargin > 0.15 ? "operational efficiency" : "room for improvement"}\n• Debt/EBITDA of ${ratios.debtToEbitda.toFixed(1)}x suggests ${ratios.debtToEbitda < 3 ? "manageable leverage" : "careful monitoring needed"}\n\nLook beyond single metrics - the story is in the combination.`,
+        ],
+        apex: [
+          `**Ratio Analysis:**\n\n| Category | Metric | Value | Status |\n|----------|--------|-------|--------|\n| Profitability | Gross Margin | ${(ratios.grossMargin * 100).toFixed(1)}% | ${ratios.grossMargin > 0.3 ? "✓" : "—"} |\n| Profitability | EBITDA Margin | ${(ratios.ebitdaMargin * 100).toFixed(1)}% | ${ratios.ebitdaMargin > 0.15 ? "✓" : "—"} |\n| Profitability | Net Margin | ${(ratios.netMargin * 100).toFixed(1)}% | ${ratios.netMargin > 0.08 ? "✓" : "—"} |\n| Returns | ROE | ${(ratios.returnOnEquity * 100).toFixed(1)}% | ${ratios.returnOnEquity > 0.12 ? "✓" : "—"} |\n| Leverage | Debt/EBITDA | ${ratios.debtToEbitda.toFixed(2)}x | ${ratios.debtToEbitda < 3.5 ? "✓" : "✗"} |\n| Liquidity | Current Ratio | ${ratios.currentRatio.toFixed(2)}x | ${ratios.currentRatio > 1.2 ? "✓" : "✗"} |`,
+        ],
+        spark: [
+          `KPI check! ⚡\n\n**The wins:**\n${ratios.grossMargin > 0.3 ? `• Gross Margin: ${(ratios.grossMargin * 100).toFixed(0)}% - solid! 💪\n` : ''}${ratios.ebitdaMargin > 0.15 ? `• EBITDA Margin: ${(ratios.ebitdaMargin * 100).toFixed(0)}% - nice efficiency!\n` : ''}${ratios.currentRatio > 1.5 ? `• Current Ratio: ${ratios.currentRatio.toFixed(1)}x - plenty of runway!\n` : ''}\n**Watch list:**\n${ratios.debtToEbitda > 3 ? `• Debt/EBITDA at ${ratios.debtToEbitda.toFixed(1)}x - keep an eye on this\n` : ''}${ratios.netMargin < 0.05 ? `• Net margin could use a boost\n` : ''}\nOverall: ${ratios.ebitdaMargin > 0.12 && ratios.currentRatio > 1 ? "Looking healthy! 🚀" : "Room to optimize!"}`,
+        ],
+      };
+      return responses[personality.id] || responses.nova;
+    }
+  }
+
+  // Questions about cash flow / FCF
+  if (lowerMessage.includes("cash flow") || lowerMessage.includes("fcf") || lowerMessage.includes("free cash")) {
+    if (hasAnalysis) {
+      const fcf = analysis.baseCase.yearlyFinancials[0]?.freeCashFlow;
+      const fcfCagr = analysis.baseCase.cagr.fcf;
+      const responses: Record<string, string[]> = {
+        nova: [
+          `**Free Cash Flow Analysis:**\n\n• Year 1 FCF: ${formatCurr(fcf || 0)}\n• FCF CAGR: ${(fcfCagr * 100).toFixed(1)}%\n• PV of Projected FCF: ${formatCurr(analysis.baseCase.dcfValuation.sumPVFCF)}\n\n${fcf && fcf > 0 ? "Positive FCF indicates the business generates cash beyond its operating and capital needs - a sign of financial health." : "Focus on reaching positive FCF to fund growth internally and reduce capital dependency."}`,
+        ],
+        grok: [
+          `Cash is king! 👑\n\n• FCF Year 1: ${formatCurr(fcf || 0)} ${fcf && fcf > 0 ? "💰" : "📉"}\n• Growing at: ${(fcfCagr * 100).toFixed(0)}% CAGR\n• Total PV of future FCF: ${formatCurr(analysis.baseCase.dcfValuation.sumPVFCF)}\n\n${fcf && fcf > 0 ? "Money machine is running! This is what actually funds dividends, buybacks, and growth." : "Still in investment mode - that's okay for growth companies!"}`,
+        ],
+        sage: [
+          `Free cash flow is the truest measure of a company's value. For ${companyName}:\n\n• Current FCF: ${formatCurr(fcf || 0)}\n• Growth trajectory: ${(fcfCagr * 100).toFixed(1)}% annually\n\n${fcf && fcf > 0 ? "Positive free cash flow is the lifeblood of shareholder returns. Guard it well." : "Building toward positive cash flow is a worthy journey. Focus on the path, not just the destination."}`,
+        ],
+        apex: [
+          `**FCF Metrics:**\n• Base FCF: ${formatCurr(fcf || 0)}\n• FCF CAGR: ${(fcfCagr * 100).toFixed(2)}%\n• Sum PV(FCF): ${formatCurr(analysis.baseCase.dcfValuation.sumPVFCF)}\n• Terminal Value PV: ${formatCurr(analysis.baseCase.dcfValuation.terminalValuePV)}\n• FCF Contribution to EV: ${((analysis.baseCase.dcfValuation.sumPVFCF / analysis.baseCase.dcfValuation.enterpriseValue) * 100).toFixed(1)}%`,
+        ],
+        spark: [
+          `FCF check! ⚡\n\n${fcf && fcf > 0 ? `Generating ${formatCurr(fcf)} in free cash flow - that's real money you can reinvest! 💪` : "Still investing in growth - totally normal for scaling companies!"}\n\nGrowing at ${(fcfCagr * 100).toFixed(0)}% CAGR - ${fcfCagr > 0.15 ? "that's rocket fuel! 🚀" : fcfCagr > 0.08 ? "solid trajectory!" : "steady progress!"}`,
+        ],
+      };
+      return responses[personality.id] || responses.nova;
+    }
+  }
+
+  // Questions about risk
+  if (lowerMessage.includes("risk") || lowerMessage.includes("threat") || lowerMessage.includes("concern") || lowerMessage.includes("danger")) {
+    if (hasAnalysis && analysis.executiveSummary) {
+      const risks = analysis.executiveSummary.risksThreats;
+      const riskMetrics = analysis.riskMetrics;
+      const responses: Record<string, string[]> = {
+        nova: [
+          `**Risk Assessment for ${companyName}:**\n\n**Volatility:** ${(riskMetrics.volatility * 100).toFixed(1)}% (${riskMetrics.volatility > 0.25 ? "High" : riskMetrics.volatility > 0.15 ? "Moderate" : "Low"})\n**Max Drawdown:** ${(riskMetrics.maxDrawdown * 100).toFixed(1)}%\n\n**Key Risk Factors:**\n${risks.slice(0, 4).map(r => `• ${r}`).join('\n')}\n\nI recommend stress-testing assumptions in the scenario analysis.`,
+        ],
+        grok: [
+          `Risk reality check! ⚠️\n\n**The numbers:**\n• Volatility: ${(riskMetrics.volatility * 100).toFixed(0)}% ${riskMetrics.volatility > 0.25 ? "😬 spicy!" : "👍 manageable"}\n• Worst case drop: ${(riskMetrics.maxDrawdown * 100).toFixed(0)}%\n\n**What could go wrong:**\n${risks.slice(0, 3).map(r => `• ${r}`).join('\n')}\n\nNot trying to scare you - just keeping it real! 💯`,
+        ],
+        sage: [
+          `A wise investor studies risk before reward. For ${companyName}:\n\nThe analysis reveals:\n${risks.slice(0, 4).map(r => `• ${r}`).join('\n')}\n\nVolatility of ${(riskMetrics.volatility * 100).toFixed(0)}% means ${riskMetrics.volatility > 0.20 ? "expect turbulence" : "relative stability"}. Remember: risk and return are forever intertwined.`,
+        ],
+        apex: [
+          `**Risk Quantification:**\n• Volatility: ${(riskMetrics.volatility * 100).toFixed(2)}%\n• Max Drawdown: ${(riskMetrics.maxDrawdown * 100).toFixed(2)}%\n• Value at Risk (implied): ~${(riskMetrics.volatility * 1.65 * 100).toFixed(1)}% at 95% CI\n\n**Qualitative Risks:**\n${risks.slice(0, 4).map((r, i) => `${i + 1}. ${r}`).join('\n')}`,
+        ],
+        spark: [
+          `Let's talk risks! ⚡ (Don't worry, every opportunity has them)\n\n**Risk metrics:**\n• Volatility: ${(riskMetrics.volatility * 100).toFixed(0)}%\n• Max drawdown: ${(riskMetrics.maxDrawdown * 100).toFixed(0)}%\n\n**Watch out for:**\n${risks.slice(0, 3).map(r => `• ${r}`).join('\n')}\n\n${riskMetrics.volatility < 0.20 ? "Actually pretty manageable! 💪" : "Higher risk = higher potential reward! Just be prepared."}`,
+        ],
+      };
+      return responses[personality.id] || responses.nova;
+    }
+  }
+
+  // Questions about strengths/opportunities
+  if (lowerMessage.includes("strength") || lowerMessage.includes("opportunity") || lowerMessage.includes("upside") || lowerMessage.includes("potential")) {
+    if (hasAnalysis && analysis.executiveSummary) {
+      const strengths = analysis.executiveSummary.strengthsOpportunities;
+      const responses: Record<string, string[]> = {
+        nova: [
+          `**Strengths & Opportunities for ${companyName}:**\n\n${strengths.slice(0, 5).map(s => `✓ ${s}`).join('\n')}\n\nThese factors support the investment thesis and could drive upside to projections.`,
+        ],
+        grok: [
+          `The good stuff! 🌟\n\n${strengths.slice(0, 4).map(s => `• ${s}`).join('\n')}\n\nThis is why we're excited about ${companyName}! 🚀`,
+        ],
+        sage: [
+          `Every investment has its merits. For ${companyName}, consider:\n\n${strengths.slice(0, 4).map(s => `• ${s}`).join('\n')}\n\nThese strengths, nurtured wisely, can compound into significant value.`,
+        ],
+        apex: [
+          `**Positive Factors:**\n${strengths.slice(0, 5).map((s, i) => `${i + 1}. ${s}`).join('\n')}\n\n**Correlation to Value:** These factors support base case assumptions and provide upside potential.`,
+        ],
+        spark: [
+          `Let's talk upside! ⚡✨\n\n${strengths.slice(0, 4).map(s => `🌟 ${s}`).join('\n')}\n\nThis is what gets me excited about ${companyName}! The potential is real! 🚀`,
+        ],
+      };
+      return responses[personality.id] || responses.nova;
+    }
+  }
+
+  // Questions about valuation (expanded keywords)
+  if (lowerMessage.includes("valuation") || lowerMessage.includes("worth") || lowerMessage.includes("value") || lowerMessage.includes("price") || lowerMessage.includes("ev") || lowerMessage.includes("enterprise")) {
     if (dcfValue && hasAnalysis) {
       const formattedValue = new Intl.NumberFormat('en-US', {
         style: 'currency',
@@ -270,8 +464,10 @@ function getContextualResponses(
     ];
   }
 
-  // General greeting or help
-  if (lowerMessage.includes("hello") || lowerMessage.includes("hi") || lowerMessage.includes("help") || lowerMessage.length < 10) {
+  // General greeting or help - be more specific to avoid matching short financial queries
+  const greetingWords = ["hello", "hi", "hey", "help", "start", "begin", "intro"];
+  const isGreeting = greetingWords.some(word => lowerMessage === word || lowerMessage.startsWith(word + " ") || lowerMessage.startsWith(word + ",") || lowerMessage.startsWith(word + "!"));
+  if (isGreeting) {
     const greetingResponses: Record<string, string[]> = {
       nova: [
         `Hello! I'm Nova, your financial analyst assistant. I can help you with:\n\n• **Valuation Analysis** - DCF, comparables, and more\n• **Financial Metrics** - Revenue, margins, ratios\n• **Investment Insights** - Recommendations and analysis\n• **Scenario Planning** - Best/worst case projections\n\nHow can I assist with your financial analysis today?`,
@@ -292,31 +488,52 @@ function getContextualResponses(
     return greetingResponses[personality.id] || greetingResponses.nova;
   }
 
-  // Default contextual responses
-  const defaultResponses: Record<string, string[]> = {
+  // If we have analysis, provide a quick data summary for any unmatched query
+  if (hasAnalysis) {
+    const dcf = analysis.baseCase.dcfValuation;
+    const ratios = analysis.baseCase.averageRatios;
+    const quickSummary = `**Quick Summary for ${companyName}:**\n• Equity Value: ${formatCurr(dcf.equityValue)}\n• Revenue CAGR: ${(analysis.baseCase.cagr.revenue * 100).toFixed(1)}%\n• EBITDA Margin: ${(ratios.ebitdaMargin * 100).toFixed(1)}%\n• Rating: ${analysis.executiveSummary.investmentRating.replace(/_/g, ' ').toUpperCase()}`;
+
+    const defaultWithData: Record<string, string[]> = {
+      nova: [
+        `I'm not quite sure what specific aspect you're asking about, but here's what I know:\n\n${quickSummary}\n\nTry asking about: **DCF**, **valuation**, **margins**, **ratios**, **scenarios**, **risk**, or **cash flow**.`,
+      ],
+      grok: [
+        `Hmm, not 100% sure what you're after, but let me throw some numbers at you! 🎯\n\n${quickSummary}\n\nWanna know more about something specific? Hit me with: valuation, profits, growth, or risk!`,
+      ],
+      sage: [
+        `Your question leads us to interesting territory. Let me share what the numbers reveal:\n\n${quickSummary}\n\nAsk specifically about DCF, scenarios, ratios, or risk to dive deeper.`,
+      ],
+      apex: [
+        `Query partially matched. Providing data summary:\n\n${quickSummary}\n\nAvailable analytical modules: DCF, WACC, IRR, scenarios, ratios, FCF, risk metrics.`,
+      ],
+      spark: [
+        `Not sure exactly what you need, but here's the exciting stuff! ⚡\n\n${quickSummary}\n\nWant details on valuation, growth, profits, or opportunities? Just ask!`,
+      ],
+    };
+    return defaultWithData[personality.id] || defaultWithData.nova;
+  }
+
+  // No analysis - guide user to input data
+  const defaultNoData: Record<string, string[]> = {
     nova: [
-      `That's an interesting question about ${companyName}'s financials. ${hasAnalysis ? `Based on the analysis I have, the company shows ${analysis.executiveSummary.confidenceLevel} confidence metrics. Would you like me to dive deeper into any specific aspect?` : "To give you the most accurate insights, I'd recommend completing the financial inputs first. What specific metrics are you most interested in?"}`,
-      `I appreciate the question! ${hasAnalysis ? `Looking at the current analysis, there are some key insights I can share about ${companyName}. What aspect would you like to explore?` : "Let me know what specific financial analysis you need, and I'll guide you through the process."}`,
+      `I'd love to help with that! To provide accurate financial analysis, I need some data first.\n\n**Options:**\n• Fill in the financial inputs manually\n• Upload an Excel or CSV file with your financials\n\nOnce I have data, I can analyze DCF valuation, ratios, growth rates, scenarios, and much more!`,
     ],
     grok: [
-      `Hmm, let me think about that one... 🤔 ${hasAnalysis ? `The data for ${companyName} is pretty interesting! What specific angle are you curious about?` : 'We should probably get some numbers in the system first - I work better with actual data than my imagination!'} What else you got?`,
-      `Good question! ${hasAnalysis ? `I've got some thoughts on ${companyName}, but I want to make sure I'm answering what you're actually asking. Can you be more specific?` : "Let's get those financials loaded up and I'll have way more interesting things to say!"} 😄`,
+      `Good question! But I'm working on empty here 😅\n\nFeed me some data and I'll tell you everything you want to know! Upload a file or punch in those numbers manually. Then we can talk valuation, growth, profits - the whole enchilada! 🌯`,
     ],
     sage: [
-      `A thoughtful question deserves a thoughtful answer. ${hasAnalysis ? `The analysis of ${companyName} reveals patterns worth discussing. What aspect calls to you?` : 'Before I can offer wisdom, we need the foundation of data. Have you completed the financial inputs?'}`,
-      `Patience, young investor. ${hasAnalysis ? 'The numbers tell a story, and I sense you seek a specific chapter. Which part interests you most?' : 'First, we must gather the financial data. Then, the insights will follow.'}`,
+      `A wise question, but wisdom requires knowledge, and knowledge requires data.\n\nPlease provide your financial information - either through manual entry or file upload - and I shall illuminate the path forward with thorough analysis.`,
     ],
     apex: [
-      `Processing query... ${hasAnalysis ? `Analysis available for ${companyName}. Specify metric category for detailed breakdown: valuation, profitability, growth, or efficiency.` : 'Insufficient data for comprehensive analysis. Recommend completing financial inputs to enable full analytical capabilities.'}`,
-      `Query noted. ${hasAnalysis ? 'Multiple analytical pathways available. Please specify: DCF analysis, ratio analysis, trend analysis, or scenario modeling.' : 'Data required for analysis. Please upload financial statements or complete manual input.'}`,
+      `Error: Insufficient data for analysis.\n\nRequired: Financial statements (income statement, balance sheet, cash flow)\nInput methods: Manual entry or file upload (Excel/CSV)\n\nOnce data is provided, full analytical suite will be available.`,
     ],
     spark: [
-      `Ooh, I like where your head's at! 🌟 ${hasAnalysis ? `${companyName} has some interesting stuff going on! What specifically gets you excited?` : "We need to power up with some financial data first! Upload a file or fill in the inputs and let's go!"} `,
-      `Great energy! ⚡ ${hasAnalysis ? "The potential here is real - what aspect do you want to explore?" : "Let's get those numbers in and see what we're working with!"} I'm ready when you are!`,
+      `Ooh great question! But I need fuel to run! ⚡\n\nUpload your financials or fill in the inputs, and I'll show you all the exciting potential and opportunities! Let's get those numbers in and make some magic happen! ✨`,
     ],
   };
 
-  return defaultResponses[personality.id] || defaultResponses.nova;
+  return defaultNoData[personality.id] || defaultNoData.nova;
 }
 
 export function AIAssistant({ model, analysis, isOpen, onClose }: AIAssistantProps) {
