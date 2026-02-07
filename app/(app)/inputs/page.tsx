@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FinancialInputForm } from "@/components/FinancialInputForm";
 import { FileUpload } from "@/components/FileUpload";
 import { AIAssistant, AIChatButton } from "@/components/AIAssistant";
+import { TipBanner } from "@/components/Banners";
 import { useFinancialModel, formatLastSaved } from "@/lib/hooks/useFinancialModel";
 import { FinancialModel } from "@/lib/models/financial-model";
 import { ParsedFinancialData } from "@/lib/utils/file-parser";
@@ -93,6 +94,9 @@ export default function InputsPage() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
+      {/* Tip Banner */}
+      <TipBanner tip="Upload Excel or CSV files to instantly populate your financial model. The AI will help validate your data!" />
+
       {/* Header */}
       <div className="border-b border-zinc-800 bg-zinc-900/50">
         <div className="max-w-7xl mx-auto px-6 py-4">

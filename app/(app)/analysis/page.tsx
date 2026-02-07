@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnalysisDashboard } from "@/components/AnalysisDashboard";
 import { AIAssistant, AIChatButton } from "@/components/AIAssistant";
+import { StatsBanner, QuickActionsBanner } from "@/components/Banners";
 import { useFinancialModel } from "@/lib/hooks/useFinancialModel";
 import { runFinancialAnalysis } from "@/lib/analysis/financial-engine";
 import { createDemoFinancialModel, DEMO_COMPANY_INFO } from "@/lib/demo-data";
@@ -141,8 +142,67 @@ export default function AnalysisPage() {
     );
   }
 
+  // Helper function to format currency
+  const formatCurrency = (value: number) => {
+    const absValue = Math.abs(value);
+    if (absValue >= 1e9) return `$${(value / 1e9).toFixed(1)}B`;
+    if (absValue >= 1e6) return `$${(value / 1e6).toFixed(1)}M`;
+    if (absValue >= 1e3) return `$${(value / 1e3).toFixed(0)}K`;
+    return `$${value.toFixed(0)}`;
+  };
+
+  const formatPercent = (value: number) => `${(value * 100).toFixed(1)}%`;
+
+  // Get key stats for the banner
+  const keyStats = analysis ? [
+    {
+      label: "Enterprise Value",
+      value: formatCurrency(analysis.baseCase.dcfValuation.enterpriseValue),
+      change: formatPercent(analysis.baseCase.cagr.revenue),
+      positive: true,
+    },
+    {
+      label: "Revenue (Y1)",
+      value: formatCurrency(analysis.baseCase.yearlyFinancials[0]?.revenue || 0),
+    },
+    {
+      label: "Gross Margin",
+      value: `${analysis.baseCase.averageRatios.grossMargin.toFixed(1)}%`,
+    },
+    {
+      label: "WACC",
+      value: formatPercent(analysis.baseCase.dcfValuation.wacc),
+    },
+  ] : [];
+
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
+      {/* Stats Banner */}
+      {analysis && <StatsBanner stats={keyStats} />}
+
+      {/* Quick Actions Banner */}
+      <QuickActionsBanner
+        title="Quick Actions"
+        actions={[
+          {
+            label: "Ask AI",
+            icon: <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>,
+            onClick: () => setShowAIChat(true),
+            highlight: true,
+          },
+          {
+            label: "Edit Inputs",
+            icon: <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>,
+            href: "/inputs",
+          },
+          {
+            label: "Generate Report",
+            icon: <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
+            href: "/reports",
+          },
+        ]}
+      />
+
       {/* Header */}
       <div className="border-b border-zinc-800 bg-zinc-900/50">
         <div className="max-w-7xl mx-auto px-6 py-4">

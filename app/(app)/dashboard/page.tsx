@@ -4,10 +4,12 @@ import Link from "next/link";
 import { useState, useMemo } from "react";
 import { useFinancialModel, formatLastSaved } from "@/lib/hooks/useFinancialModel";
 import { runFinancialAnalysis } from "@/lib/analysis/financial-engine";
+import { createDemoFinancialModel } from "@/lib/demo-data";
 import { KPIDashboard } from "@/components/dashboards/KPIDashboard";
 import { ChartsDashboard } from "@/components/dashboards/ChartsDashboard";
 import { RiskDashboard } from "@/components/dashboards/RiskDashboard";
 import { AIAssistant, AIChatButton } from "@/components/AIAssistant";
+import { DemoBanner, FeatureBanner } from "@/components/Banners";
 
 type DashboardTab = "overview" | "kpis" | "charts" | "risk";
 
@@ -75,9 +77,22 @@ function MiniSparkline({ data, color = "#f59e0b" }: { data: number[]; color?: st
 }
 
 export default function DashboardPage() {
-  const { model, lastSaved, isLoading, isModelValid, clearModel } = useFinancialModel();
+  const { model, lastSaved, isLoading, isModelValid, clearModel, saveModel } = useFinancialModel();
   const [activeTab, setActiveTab] = useState<DashboardTab>("overview");
   const [showAIChat, setShowAIChat] = useState(false);
+  const [isLoadingDemo, setIsLoadingDemo] = useState(false);
+
+  const loadDemo = async () => {
+    setIsLoadingDemo(true);
+    try {
+      const demoModel = createDemoFinancialModel();
+      saveModel(demoModel);
+      window.location.reload();
+    } catch (error) {
+      console.error("Failed to load demo:", error);
+      setIsLoadingDemo(false);
+    }
+  };
 
   const analysis = useMemo(() => {
     if (model && isModelValid(model)) {
@@ -344,6 +359,9 @@ export default function DashboardPage() {
         ) : (
           /* No model state */
           <div className="space-y-8">
+            {/* Demo Banner */}
+            <DemoBanner onLoadDemo={loadDemo} isLoading={isLoadingDemo} />
+
             {/* Welcome Hero */}
             <div className="relative overflow-hidden rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-900 via-zinc-900/90 to-amber-500/5 p-8 md:p-12">
               <div className="absolute top-0 right-0 w-64 h-64 opacity-10">
