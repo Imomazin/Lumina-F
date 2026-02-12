@@ -8,10 +8,13 @@ import { createDemoFinancialModel } from "@/lib/demo-data";
 import { KPIDashboard } from "@/components/dashboards/KPIDashboard";
 import { ChartsDashboard } from "@/components/dashboards/ChartsDashboard";
 import { RiskDashboard } from "@/components/dashboards/RiskDashboard";
+import { FinanceDashboard } from "@/components/dashboards/FinanceDashboard";
 import { AIAssistant, AIChatButton } from "@/components/AIAssistant";
+import { LandingExperience } from "@/components/LandingExperience";
 import { DemoBanner, FeatureBanner } from "@/components/Banners";
+import { ParsedFinancialData } from "@/lib/utils/file-parser";
 
-type DashboardTab = "overview" | "kpis" | "charts" | "risk";
+type DashboardTab = "overview" | "finance" | "kpis" | "charts" | "risk";
 
 function formatCurrency(value: number, currency: string = "USD"): string {
   const symbols: Record<string, string> = {
@@ -116,6 +119,7 @@ export default function DashboardPage() {
 
   const tabs = [
     { id: "overview" as const, label: "Overview", icon: "📊" },
+    { id: "finance" as const, label: "Finance", icon: "💰" },
     { id: "kpis" as const, label: "KPIs", icon: "📈" },
     { id: "charts" as const, label: "Charts", icon: "📉" },
     { id: "risk" as const, label: "Risk", icon: "⚠️" },
@@ -346,6 +350,10 @@ export default function DashboardPage() {
 
             {activeTab === "kpis" && (
               <KPIDashboard analysis={analysis} currency={model.profile.currency} />
+            )}
+
+            {activeTab === "finance" && (
+              <FinanceDashboard analysis={analysis} currency={model.profile.currency} />
             )}
 
             {activeTab === "charts" && (
