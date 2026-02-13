@@ -5,16 +5,14 @@ import { useState, useMemo } from "react";
 import { useFinancialModel, formatLastSaved } from "@/lib/hooks/useFinancialModel";
 import { runFinancialAnalysis } from "@/lib/analysis/financial-engine";
 import { createDemoFinancialModel } from "@/lib/demo-data";
+import { DashboardShell, StatCard, DashboardGrid, Panel } from "@/components/DashboardShell";
+import { FinanceDashboard } from "@/components/dashboards/FinanceDashboard";
 import { KPIDashboard } from "@/components/dashboards/KPIDashboard";
 import { ChartsDashboard } from "@/components/dashboards/ChartsDashboard";
 import { RiskDashboard } from "@/components/dashboards/RiskDashboard";
-import { FinanceDashboard } from "@/components/dashboards/FinanceDashboard";
 import { AIAssistant, AIChatButton } from "@/components/AIAssistant";
-import { LandingExperience } from "@/components/LandingExperience";
-import { DemoBanner, FeatureBanner } from "@/components/Banners";
-import { ParsedFinancialData } from "@/lib/utils/file-parser";
 
-type DashboardTab = "overview" | "finance" | "kpis" | "charts" | "risk";
+type DashboardView = "overview" | "finance" | "kpis" | "charts" | "risk";
 
 function formatCurrency(value: number, currency: string = "USD"): string {
   const symbols: Record<string, string> = {
@@ -32,56 +30,9 @@ function formatPercent(value: number): string {
   return `${(value * 100).toFixed(1)}%`;
 }
 
-// Animated number component
-function AnimatedNumber({ value, format }: { value: number; format: (v: number) => string }) {
-  const [displayValue, setDisplayValue] = useState(0);
-
-  useState(() => {
-    let start = 0;
-    const end = value;
-    const duration = 1000;
-    const startTime = performance.now();
-
-    const animate = (currentTime: number) => {
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setDisplayValue(start + (end - start) * eased);
-
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      }
-    };
-
-    requestAnimationFrame(animate);
-  });
-
-  return <span>{format(displayValue)}</span>;
-}
-
-// Mini sparkline for quick metrics
-function MiniSparkline({ data, color = "#f59e0b" }: { data: number[]; color?: string }) {
-  if (data.length < 2) return null;
-  const min = Math.min(...data);
-  const max = Math.max(...data);
-  const range = max - min || 1;
-
-  const points = data.map((v, i) => {
-    const x = (i / (data.length - 1)) * 60;
-    const y = 20 - ((v - min) / range) * 16;
-    return `${x},${y}`;
-  }).join(" ");
-
-  return (
-    <svg width="60" height="24" className="opacity-60">
-      <polyline points={points} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  );
-}
-
 export default function DashboardPage() {
-  const { model, lastSaved, isLoading, isModelValid, clearModel, saveModel } = useFinancialModel();
-  const [activeTab, setActiveTab] = useState<DashboardTab>("overview");
+  const { model, lastSaved, isLoading, isModelValid, saveModel } = useFinancialModel();
+  const [activeView, setActiveView] = useState<DashboardView>("overview");
   const [showAIChat, setShowAIChat] = useState(false);
   const [isLoadingDemo, setIsLoadingDemo] = useState(false);
 
@@ -104,369 +55,411 @@ export default function DashboardPage() {
     return null;
   }, [model, isModelValid]);
 
+  const hasValidModel = model && isModelValid(model);
+
+  const viewTabs = [
+    {
+      id: "overview",
+      label: "Overview",
+      icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>,
+    },
+    {
+      id: "finance",
+      label: "Finance",
+      icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+    },
+    {
+      id: "kpis",
+      label: "KPIs",
+      icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>,
+    },
+    {
+      id: "charts",
+      label: "Charts",
+      icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" /></svg>,
+    },
+    {
+      id: "risk",
+      label: "Risk",
+      icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
+    },
+  ];
+
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+      <div className="min-h-screen bg-[#09090b] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-zinc-400">Loading dashboard...</p>
+          <div className="w-10 h-10 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-zinc-500 text-sm">Loading...</p>
         </div>
       </div>
     );
   }
 
-  const hasValidModel = model && isModelValid(model);
-
-  const tabs = [
-    { id: "overview" as const, label: "Overview", icon: "📊" },
-    { id: "finance" as const, label: "Finance", icon: "💰" },
-    { id: "kpis" as const, label: "KPIs", icon: "📈" },
-    { id: "charts" as const, label: "Charts", icon: "📉" },
-    { id: "risk" as const, label: "Risk", icon: "⚠️" },
-  ];
-
-  return (
-    <div className="min-h-screen bg-[#0a0a0a]">
-      {/* Header */}
-      <div className="border-b border-zinc-800 bg-gradient-to-r from-zinc-900 via-zinc-900/90 to-zinc-900">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-                <span className="text-amber-400">◆</span>
-                <span className="text-amber-400">Lumina</span>
-                <span className="text-white">F</span>
-              </h1>
-              <p className="text-sm text-zinc-400 mt-1">
-                {hasValidModel ? `${model.profile.companyName} • ${model.profile.forecastYears}-Year Analysis` : "Financial modeling and analysis platform"}
-              </p>
+  // Empty State - No Model
+  if (!hasValidModel || !analysis) {
+    return (
+      <DashboardShell
+        companyName="Welcome to Lumina F"
+        subtitle="Financial Intelligence Platform"
+      >
+        <div className="max-w-4xl mx-auto py-12">
+          {/* Hero */}
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/10 border border-amber-500/20 mb-6">
+              <svg className="w-8 h-8 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
             </div>
-            <div className="flex items-center gap-4">
-              {lastSaved && (
-                <span className="text-xs text-zinc-500">
-                  Last saved: {formatLastSaved(lastSaved)}
-                </span>
-              )}
-              {hasValidModel && (
-                <button
-                  onClick={() => setShowAIChat(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-black font-medium rounded-lg hover:from-amber-400 hover:to-orange-400 transition-all text-sm"
-                >
-                  <span>✨</span>
-                  Ask AI
-                </button>
-              )}
-            </div>
+            <h1 className="text-3xl font-bold text-white mb-3">
+              Build Professional Financial Models
+            </h1>
+            <p className="text-zinc-400 text-lg max-w-xl mx-auto">
+              DCF valuation, scenario analysis, 50+ financial ratios, and AI-powered insights.
+            </p>
           </div>
 
-          {/* Tab Navigation */}
-          {hasValidModel && (
-            <div className="flex gap-1 mt-4 -mb-px">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-all ${
-                    activeTab === tab.id
-                      ? "bg-zinc-800 text-amber-400 border-t border-l border-r border-zinc-700"
-                      : "text-zinc-400 hover:text-white hover:bg-zinc-800/50"
-                  }`}
-                >
-                  <span className="mr-2">{tab.icon}</span>
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          )}
+          {/* Quick Start Options */}
+          <div className="grid md:grid-cols-2 gap-6 mb-12">
+            {/* Load Demo */}
+            <button
+              onClick={loadDemo}
+              disabled={isLoadingDemo}
+              className="group relative overflow-hidden rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/10 to-orange-500/5 p-6 text-left transition-all hover:border-amber-500/50 hover:shadow-lg hover:shadow-amber-500/10 disabled:opacity-50"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl" />
+              <div className="relative">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                    <span className="text-xl">🚀</span>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-white">Try Demo</h3>
+                    <p className="text-xs text-amber-400/70">TechVentures Inc.</p>
+                  </div>
+                </div>
+                <p className="text-sm text-zinc-400 mb-4">
+                  Explore a complete 5-year financial model with DCF valuation and scenario analysis.
+                </p>
+                <span className="inline-flex items-center gap-2 text-sm font-medium text-amber-400 group-hover:gap-3 transition-all">
+                  {isLoadingDemo ? "Loading..." : "Load Demo"}
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                </span>
+              </div>
+            </button>
+
+            {/* Create New */}
+            <Link
+              href="/inputs"
+              className="group relative overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6 text-left transition-all hover:border-zinc-700 hover:bg-zinc-900"
+            >
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-lg bg-zinc-800 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-white">Create New Model</h3>
+                  <p className="text-xs text-zinc-500">Start from scratch</p>
+                </div>
+              </div>
+              <p className="text-sm text-zinc-400 mb-4">
+                Build a custom financial model with your own data and assumptions.
+              </p>
+              <span className="inline-flex items-center gap-2 text-sm font-medium text-zinc-300 group-hover:gap-3 transition-all">
+                Get Started
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+              </span>
+            </Link>
+          </div>
+
+          {/* Features */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              { icon: "📊", label: "DCF Valuation" },
+              { icon: "📈", label: "50+ Ratios" },
+              { icon: "🎯", label: "Scenarios" },
+              { icon: "⚡", label: "AI Insights" },
+            ].map((f) => (
+              <div key={f.label} className="flex items-center gap-3 p-3 rounded-lg bg-zinc-900/50 border border-zinc-800/50">
+                <span className="text-lg">{f.icon}</span>
+                <span className="text-sm text-zinc-400">{f.label}</span>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      </DashboardShell>
+    );
+  }
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Dashboard Content */}
-        {hasValidModel && analysis ? (
-          <>
-            {activeTab === "overview" && (
-              <div className="space-y-6">
-                {/* Hero Metrics */}
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                  <div className="relative overflow-hidden rounded-xl border border-amber-500/30 bg-gradient-to-br from-amber-500/10 to-amber-500/5 p-6">
-                    <div className="absolute top-0 right-0 w-24 h-24 opacity-10">
-                      <svg viewBox="0 0 100 100"><circle cx="80" cy="20" r="60" fill="#f59e0b" /></svg>
-                    </div>
-                    <p className="text-xs text-amber-400/70 uppercase tracking-wider">Enterprise Value</p>
-                    <p className="mt-2 text-3xl font-bold text-amber-400">
-                      {formatCurrency(analysis.baseCase.dcfValuation.enterpriseValue, model.profile.currency)}
-                    </p>
-                    <div className="mt-3 flex items-center gap-2">
-                      <MiniSparkline data={analysis.baseCase.yearlyFinancials.map(yf => yf.revenue)} />
-                      <span className="text-xs text-amber-400/60">Revenue trend</span>
-                    </div>
-                  </div>
+  // Main Dashboard with Model
+  const currency = model.profile.currency;
+  const lastYear = analysis.baseCase.yearlyFinancials[analysis.baseCase.yearlyFinancials.length - 1];
 
-                  <div className="relative overflow-hidden rounded-xl border border-green-500/30 bg-gradient-to-br from-green-500/10 to-green-500/5 p-6">
-                    <p className="text-xs text-green-400/70 uppercase tracking-wider">Equity Value</p>
-                    <p className="mt-2 text-3xl font-bold text-green-400">
-                      {formatCurrency(analysis.baseCase.dcfValuation.equityValue, model.profile.currency)}
-                    </p>
-                    <div className="mt-3 flex items-center gap-2">
-                      <span className={`text-sm ${analysis.baseCase.dcfValuation.equityValue > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                        WACC: {formatPercent(analysis.baseCase.dcfValuation.wacc)}
-                      </span>
-                    </div>
-                  </div>
+  return (
+    <DashboardShell
+      companyName={model.profile.companyName}
+      subtitle={`${model.profile.forecastYears}-Year Analysis`}
+      lastSaved={lastSaved ? formatLastSaved(lastSaved) : undefined}
+      tabs={viewTabs}
+      activeTab={activeView}
+      onTabChange={(id) => setActiveView(id as DashboardView)}
+      actions={
+        <button
+          onClick={() => setShowAIChat(true)}
+          className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-amber-500 to-orange-500 text-black text-sm font-medium rounded-lg hover:from-amber-400 hover:to-orange-400 transition-all"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          Ask AI
+        </button>
+      }
+    >
+      {/* Overview View */}
+      {activeView === "overview" && (
+        <div className="space-y-6">
+          {/* Key Metrics Row */}
+          <DashboardGrid cols={5} gap={4}>
+            <StatCard
+              label="Enterprise Value"
+              value={formatCurrency(analysis.baseCase.dcfValuation.enterpriseValue, currency)}
+              variant="primary"
+              size="large"
+            />
+            <StatCard
+              label="Equity Value"
+              value={formatCurrency(analysis.baseCase.dcfValuation.equityValue, currency)}
+              change={analysis.baseCase.cagr.revenue * 100}
+              changeLabel="Rev CAGR"
+              variant="success"
+            />
+            <StatCard
+              label="Revenue (Final Year)"
+              value={formatCurrency(lastYear.revenue, currency)}
+              change={analysis.baseCase.cagr.revenue * 100}
+              changeLabel="CAGR"
+            />
+            <StatCard
+              label="EBITDA Margin"
+              value={formatPercent(lastYear.ebitdaMargin)}
+              variant={lastYear.ebitdaMargin > 0.2 ? "success" : "warning"}
+            />
+            <StatCard
+              label="WACC"
+              value={`${analysis.baseCase.dcfValuation.wacc.toFixed(1)}%`}
+            />
+          </DashboardGrid>
 
-                  <div className="relative overflow-hidden rounded-xl border border-blue-500/30 bg-gradient-to-br from-blue-500/10 to-blue-500/5 p-6">
-                    <p className="text-xs text-blue-400/70 uppercase tracking-wider">Investment Rating</p>
-                    <p className={`mt-2 text-3xl font-bold capitalize ${
-                      analysis.executiveSummary.investmentRating.includes('buy') ? 'text-green-400' :
-                      analysis.executiveSummary.investmentRating === 'hold' ? 'text-amber-400' : 'text-red-400'
-                    }`}>
-                      {analysis.executiveSummary.investmentRating.replace('_', ' ')}
-                    </p>
-                    <div className="mt-3">
-                      <span className="text-xs text-zinc-500">Confidence: {analysis.executiveSummary.confidenceLevel}</span>
-                    </div>
-                  </div>
+          {/* Main Content Grid */}
+          <div className="grid grid-cols-12 gap-6">
+            {/* Left Column - 8 cols */}
+            <div className="col-span-12 xl:col-span-8 space-y-6">
+              {/* Scenario Comparison */}
+              <Panel title="Scenario Comparison" subtitle="Enterprise Value by Case">
+                <div className="grid grid-cols-3 gap-4">
+                  {analysis.scenarios.slice(0, 3).map((scenario, idx) => {
+                    const colors = [
+                      { bg: "bg-green-500/10", border: "border-green-500/30", text: "text-green-400" },
+                      { bg: "bg-amber-500/10", border: "border-amber-500/30", text: "text-amber-400" },
+                      { bg: "bg-red-500/10", border: "border-red-500/30", text: "text-red-400" },
+                    ];
+                    const c = colors[idx] || colors[1];
 
-                  <div className="relative overflow-hidden rounded-xl border border-purple-500/30 bg-gradient-to-br from-purple-500/10 to-purple-500/5 p-6">
-                    <p className="text-xs text-purple-400/70 uppercase tracking-wider">Revenue CAGR</p>
-                    <p className="mt-2 text-3xl font-bold text-purple-400">
-                      {formatPercent(analysis.baseCase.cagr.revenue)}
-                    </p>
-                    <div className="mt-3">
-                      <span className="text-xs text-zinc-500">
-                        {model.profile.forecastYears}-year growth
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Key Highlights */}
-                <div className="grid gap-6 lg:grid-cols-2">
-                  <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
-                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                      Strengths & Opportunities
-                    </h3>
-                    <ul className="space-y-3">
-                      {analysis.executiveSummary.strengthsOpportunities.slice(0, 4).map((item, i) => (
-                        <li key={i} className="flex items-start gap-3">
-                          <span className="text-green-500 mt-0.5">✓</span>
-                          <span className="text-zinc-300 text-sm">{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
-                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-red-500"></span>
-                      Risks & Challenges
-                    </h3>
-                    <ul className="space-y-3">
-                      {analysis.executiveSummary.risksThreats.slice(0, 4).map((item, i) => (
-                        <li key={i} className="flex items-start gap-3">
-                          <span className="text-red-500 mt-0.5">⚠</span>
-                          <span className="text-zinc-300 text-sm">{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-
-                {/* Scenario Preview */}
-                <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
-                  <h3 className="text-lg font-semibold text-white mb-4">Scenario Analysis Preview</h3>
-                  <div className="grid gap-4 md:grid-cols-3">
-                    {analysis.scenarios.slice(0, 3).map((scenario, idx) => {
-                      const colors = [
-                        { border: "border-green-500/30", bg: "bg-green-500/10", text: "text-green-400" },
-                        { border: "border-amber-500/30", bg: "bg-amber-500/10", text: "text-amber-400" },
-                        { border: "border-red-500/30", bg: "bg-red-500/10", text: "text-red-400" },
-                      ];
-                      const c = colors[idx] || colors[1];
-
-                      return (
-                        <div key={scenario.scenarioId} className={`rounded-lg border ${c.border} ${c.bg} p-4`}>
-                          <div className="flex items-center justify-between mb-3">
-                            <span className="font-medium text-white">{scenario.scenarioName}</span>
-                            <span className="text-xs text-zinc-500">{scenario.probability}%</span>
-                          </div>
-                          <div className="space-y-2">
-                            <div className="flex justify-between text-sm">
-                              <span className="text-zinc-400">EV</span>
-                              <span className={`font-mono ${c.text}`}>
-                                {formatCurrency(scenario.dcfValuation.enterpriseValue, model.profile.currency)}
-                              </span>
-                            </div>
-                            <div className="flex justify-between text-sm">
-                              <span className="text-zinc-400">IRR</span>
-                              <span className={`font-mono ${c.text}`}>
-                                {formatPercent(scenario.irr)}
-                              </span>
-                            </div>
-                          </div>
+                    return (
+                      <div key={scenario.scenarioId} className={`rounded-xl ${c.bg} border ${c.border} p-4`}>
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="font-medium text-white text-sm">{scenario.scenarioName}</span>
+                          <span className="text-xs text-zinc-500 bg-zinc-800/50 px-2 py-0.5 rounded">
+                            {scenario.probability}%
+                          </span>
                         </div>
-                      );
-                    })}
-                  </div>
+                        <p className={`text-2xl font-bold ${c.text} mb-2`}>
+                          {formatCurrency(scenario.dcfValuation.enterpriseValue, currency)}
+                        </p>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-zinc-500">IRR</span>
+                          <span className={`font-mono ${c.text}`}>
+                            {scenario.irr === Infinity ? "∞" : formatPercent(scenario.irr)}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
+              </Panel>
 
-                {/* Quick Actions */}
-                <div className="grid gap-4 md:grid-cols-3">
+              {/* Revenue Trend Chart */}
+              <Panel title="Revenue & Profitability" subtitle="Annual performance">
+                <div className="h-64 flex items-end gap-3">
+                  {analysis.baseCase.yearlyFinancials.map((yf, idx) => {
+                    const maxRevenue = Math.max(...analysis.baseCase.yearlyFinancials.map(y => y.revenue));
+                    const height = (yf.revenue / maxRevenue) * 100;
+                    const prevRevenue = idx > 0 ? analysis.baseCase.yearlyFinancials[idx - 1].revenue : yf.revenue;
+                    const growth = ((yf.revenue - prevRevenue) / prevRevenue) * 100;
+
+                    return (
+                      <div key={yf.year} className="flex-1 flex flex-col items-center gap-2">
+                        <div className="w-full flex flex-col items-center">
+                          <span className="text-xs text-zinc-400 mb-1">
+                            {formatCurrency(yf.revenue, currency)}
+                          </span>
+                          {idx > 0 && (
+                            <span className={`text-[10px] mb-1 ${growth >= 0 ? "text-green-400" : "text-red-400"}`}>
+                              {growth >= 0 ? "+" : ""}{growth.toFixed(0)}%
+                            </span>
+                          )}
+                        </div>
+                        <div
+                          className="w-full bg-gradient-to-t from-amber-600 to-amber-400 rounded-t-lg transition-all hover:from-amber-500 hover:to-amber-300"
+                          style={{ height: `${height}%`, minHeight: "20px" }}
+                        />
+                        <span className="text-xs text-zinc-500">{yf.year}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </Panel>
+            </div>
+
+            {/* Right Column - 4 cols */}
+            <div className="col-span-12 xl:col-span-4 space-y-6">
+              {/* Strengths */}
+              <Panel title="Strengths & Opportunities">
+                <ul className="space-y-2">
+                  {analysis.executiveSummary.strengthsOpportunities.slice(0, 4).map((item, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm">
+                      <svg className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="text-zinc-300">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </Panel>
+
+              {/* Risks */}
+              <Panel title="Risks & Challenges">
+                <ul className="space-y-2">
+                  {analysis.executiveSummary.risksThreats.slice(0, 4).map((item, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm">
+                      <svg className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                      <span className="text-zinc-300">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </Panel>
+
+              {/* Quick Actions */}
+              <Panel title="Quick Actions">
+                <div className="grid grid-cols-2 gap-2">
                   <Link
                     href="/inputs"
-                    className="group flex items-center gap-4 rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 transition-all hover:border-amber-500/50 hover:bg-zinc-800/50"
+                    className="flex items-center gap-2 p-3 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors text-sm text-zinc-300"
                   >
-                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-amber-500/10 text-2xl">📝</div>
-                    <div>
-                      <h3 className="font-medium text-white group-hover:text-amber-400">Edit Inputs</h3>
-                      <p className="text-sm text-zinc-500">Modify financial data</p>
-                    </div>
+                    <svg className="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Edit Inputs
                   </Link>
                   <Link
                     href="/analysis"
-                    className="group flex items-center gap-4 rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 transition-all hover:border-blue-500/50 hover:bg-zinc-800/50"
+                    className="flex items-center gap-2 p-3 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors text-sm text-zinc-300"
                   >
-                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-500/10 text-2xl">📊</div>
-                    <div>
-                      <h3 className="font-medium text-white group-hover:text-blue-400">Full Analysis</h3>
-                      <p className="text-sm text-zinc-500">Detailed breakdowns</p>
-                    </div>
+                    <svg className="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    Full Analysis
                   </Link>
                   <Link
                     href="/reports"
-                    className="group flex items-center gap-4 rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 transition-all hover:border-green-500/50 hover:bg-zinc-800/50"
+                    className="flex items-center gap-2 p-3 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors text-sm text-zinc-300"
                   >
-                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-green-500/10 text-2xl">📄</div>
-                    <div>
-                      <h3 className="font-medium text-white group-hover:text-green-400">Generate Report</h3>
-                      <p className="text-sm text-zinc-500">Export PDF</p>
-                    </div>
-                  </Link>
-                </div>
-              </div>
-            )}
-
-            {activeTab === "kpis" && (
-              <KPIDashboard analysis={analysis} currency={model.profile.currency} />
-            )}
-
-            {activeTab === "finance" && (
-              <FinanceDashboard analysis={analysis} currency={model.profile.currency} />
-            )}
-
-            {activeTab === "charts" && (
-              <ChartsDashboard analysis={analysis} currency={model.profile.currency} />
-            )}
-
-            {activeTab === "risk" && (
-              <RiskDashboard analysis={analysis} currency={model.profile.currency} />
-            )}
-          </>
-        ) : (
-          /* No model state */
-          <div className="space-y-8">
-            {/* Demo Banner */}
-            <DemoBanner onLoadDemo={loadDemo} isLoading={isLoadingDemo} />
-
-            {/* Welcome Hero */}
-            <div className="relative overflow-hidden rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-900 via-zinc-900/90 to-amber-500/5 p-8 md:p-12">
-              <div className="absolute top-0 right-0 w-64 h-64 opacity-10">
-                <svg viewBox="0 0 200 200">
-                  <circle cx="150" cy="50" r="100" fill="#f59e0b" />
-                  <circle cx="50" cy="150" r="80" fill="#3b82f6" />
-                </svg>
-              </div>
-              <div className="relative">
-                <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-                  Welcome to <span className="text-amber-400">Lumina F</span>
-                </h2>
-                <p className="text-lg text-zinc-400 max-w-2xl mb-8">
-                  Professional financial modeling and analysis platform. Build DCF models,
-                  analyze scenarios, and generate executive reports with AI-powered insights.
-                </p>
-                <div className="flex flex-wrap gap-4">
-                  <Link
-                    href="/inputs"
-                    className="inline-flex items-center px-6 py-3 bg-amber-500 text-black font-medium rounded-lg hover:bg-amber-400 transition-colors"
-                  >
-                    Start Analysis
-                    <svg className="ml-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    <svg className="w-4 h-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
+                    Export PDF
                   </Link>
                   <button
                     onClick={() => setShowAIChat(true)}
-                    className="inline-flex items-center px-6 py-3 border border-zinc-700 text-zinc-300 rounded-lg hover:bg-zinc-800 transition-colors"
+                    className="flex items-center gap-2 p-3 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors text-sm text-zinc-300"
                   >
-                    <span className="mr-2">✨</span>
-                    Chat with AI
+                    <svg className="w-4 h-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    Ask AI
                   </button>
                 </div>
-              </div>
-            </div>
-
-            {/* Features Grid */}
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {[
-                { icon: "📊", title: "DCF Valuation", desc: "Comprehensive discounted cash flow analysis with sensitivity modeling", color: "amber" },
-                { icon: "📈", title: "50+ Ratios", desc: "Profitability, liquidity, leverage, and efficiency metrics", color: "blue" },
-                { icon: "🎯", title: "Scenario Analysis", desc: "Model best, base, and worst case scenarios with probabilities", color: "green" },
-                { icon: "🤖", title: "AI Assistant", desc: "Get instant insights and answers about your financials", color: "purple" },
-                { icon: "📄", title: "Executive Reports", desc: "Generate professional PDF reports for stakeholders", color: "rose" },
-                { icon: "📁", title: "File Import", desc: "Upload Excel or CSV files to auto-populate your model", color: "cyan" },
-              ].map((feature, idx) => (
-                <div
-                  key={idx}
-                  className={`rounded-xl border border-zinc-800 bg-zinc-900/50 p-6 hover:border-${feature.color}-500/50 transition-all`}
-                >
-                  <div className="text-3xl mb-4">{feature.icon}</div>
-                  <h3 className="font-semibold text-white mb-2">{feature.title}</h3>
-                  <p className="text-sm text-zinc-400">{feature.desc}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* Getting Started */}
-            <div className="rounded-xl border border-dashed border-zinc-700 bg-zinc-900/30 p-8">
-              <h2 className="text-xl font-semibold text-white mb-6">Getting Started</h2>
-              <div className="grid gap-6 md:grid-cols-4">
-                {[
-                  { step: 1, title: "Enter Data", desc: "Input financial data or upload files", icon: "📝" },
-                  { step: 2, title: "Configure", desc: "Set valuation assumptions", icon: "⚙️" },
-                  { step: 3, title: "Analyze", desc: "Review metrics and scenarios", icon: "📊" },
-                  { step: 4, title: "Report", desc: "Generate executive summary", icon: "📄" },
-                ].map((item) => (
-                  <div key={item.step} className="text-center">
-                    <div className="relative inline-flex">
-                      <span className="flex h-16 w-16 items-center justify-center rounded-full bg-zinc-800 text-2xl mb-3">
-                        {item.icon}
-                      </span>
-                      <span className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-amber-500 text-xs font-bold text-black">
-                        {item.step}
-                      </span>
-                    </div>
-                    <h3 className="font-medium text-white">{item.title}</h3>
-                    <p className="text-sm text-zinc-500 mt-1">{item.desc}</p>
-                  </div>
-                ))}
-              </div>
+              </Panel>
             </div>
           </div>
-        )}
-      </div>
 
-      {/* AI Chat Button */}
-      <AIChatButton onClick={() => setShowAIChat(true)} />
+          {/* Bottom Row - Key Ratios */}
+          <Panel title="Key Financial Metrics">
+            <DashboardGrid cols={6} gap={4}>
+              <div className="text-center p-3 rounded-lg bg-zinc-800/30">
+                <p className="text-xs text-zinc-500 mb-1">Gross Margin</p>
+                <p className="text-lg font-bold text-white">{formatPercent(lastYear.grossMargin)}</p>
+              </div>
+              <div className="text-center p-3 rounded-lg bg-zinc-800/30">
+                <p className="text-xs text-zinc-500 mb-1">EBITDA Margin</p>
+                <p className="text-lg font-bold text-white">{formatPercent(lastYear.ebitdaMargin)}</p>
+              </div>
+              <div className="text-center p-3 rounded-lg bg-zinc-800/30">
+                <p className="text-xs text-zinc-500 mb-1">Net Margin</p>
+                <p className="text-lg font-bold text-white">{formatPercent(lastYear.netMargin)}</p>
+              </div>
+              <div className="text-center p-3 rounded-lg bg-zinc-800/30">
+                <p className="text-xs text-zinc-500 mb-1">FCF Margin</p>
+                <p className="text-lg font-bold text-white">{formatPercent(lastYear.fcfMargin)}</p>
+              </div>
+              <div className="text-center p-3 rounded-lg bg-zinc-800/30">
+                <p className="text-xs text-zinc-500 mb-1">Rev CAGR</p>
+                <p className="text-lg font-bold text-green-400">{formatPercent(analysis.baseCase.cagr.revenue)}</p>
+              </div>
+              <div className="text-center p-3 rounded-lg bg-zinc-800/30">
+                <p className="text-xs text-zinc-500 mb-1">EPS</p>
+                <p className="text-lg font-bold text-white">{formatCurrency(lastYear.eps, currency)}</p>
+              </div>
+            </DashboardGrid>
+          </Panel>
+        </div>
+      )}
 
-      {/* AI Assistant */}
+      {/* Finance View */}
+      {activeView === "finance" && (
+        <FinanceDashboard analysis={analysis} currency={currency} />
+      )}
+
+      {/* KPIs View */}
+      {activeView === "kpis" && (
+        <KPIDashboard analysis={analysis} currency={currency} />
+      )}
+
+      {/* Charts View */}
+      {activeView === "charts" && (
+        <ChartsDashboard analysis={analysis} currency={currency} />
+      )}
+
+      {/* Risk View */}
+      {activeView === "risk" && (
+        <RiskDashboard analysis={analysis} currency={currency} />
+      )}
+
+      {/* AI Chat */}
       <AIAssistant
         model={model}
         analysis={analysis}
         isOpen={showAIChat}
         onClose={() => setShowAIChat(false)}
       />
-    </div>
+    </DashboardShell>
   );
 }
