@@ -1,9 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { AnalysisDashboard } from "@/components/AnalysisDashboard";
 import { AIAssistant } from "@/components/AIAssistant";
+import { ScenarioBuilder } from "@/components/modules/ScenarioBuilder";
 import { useFinancialModel, formatLastSaved } from "@/lib/hooks/useFinancialModel";
 import { runFinancialAnalysis } from "@/lib/analysis/financial-engine";
 import { createDemoFinancialModel, DEMO_COMPANY_INFO } from "@/lib/demo-data";
@@ -15,7 +17,28 @@ import {
   SkeletonCard,
 } from "@/components/ui/design-system";
 
-export default function AnalysisPage() {
+// Loading fallback for Suspense
+function AnalysisLoading() {
+  return (
+    <div className="space-y-6 animate-pulse">
+      <div className="flex gap-2">
+        {[1, 2, 3, 4, 5].map(i => (
+          <Skeleton key={i} width={80} height={36} className="rounded-lg" />
+        ))}
+      </div>
+      <div className="grid md:grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map(i => (
+          <SkeletonCard key={i} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Main content component that uses useSearchParams
+function AnalysisContent() {
+  const searchParams = useSearchParams();
+  const view = searchParams.get("view");
   const { model, lastSaved, isLoading, isModelValid, saveModel } = useFinancialModel();
   const [showAIChat, setShowAIChat] = useState(false);
   const [isLoadingDemo, setIsLoadingDemo] = useState(false);
@@ -41,20 +64,7 @@ export default function AnalysisPage() {
 
   // Loading state
   if (isLoading) {
-    return (
-      <div className="space-y-6 animate-pulse">
-        <div className="flex gap-2">
-          {[1, 2, 3, 4, 5].map(i => (
-            <Skeleton key={i} width={80} height={36} className="rounded-lg" />
-          ))}
-        </div>
-        <div className="grid md:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map(i => (
-            <SkeletonCard key={i} />
-          ))}
-        </div>
-      </div>
-    );
+    return <AnalysisLoading />;
   }
 
   // Empty state - no model
@@ -70,10 +80,12 @@ export default function AnalysisPage() {
                 </svg>
               </div>
               <h1 className="text-3xl font-bold text-white mb-3">
-                Financial Analysis
+                {view === "scenarios" ? "Scenario Lab" : "Financial Analysis"}
               </h1>
               <p className="text-lg text-zinc-400 max-w-lg mx-auto">
-                DCF valuation, 50+ ratios, scenario modeling, Monte Carlo simulation, and AI-powered insights.
+                {view === "scenarios"
+                  ? "Create and compare what-if scenarios to understand valuation drivers and sensitivity."
+                  : "DCF valuation, 50+ ratios, scenario modeling, Monte Carlo simulation, and AI-powered insights."}
               </p>
             </div>
 
@@ -120,6 +132,9 @@ export default function AnalysisPage() {
     );
   }
 
+  // Determine which view to show
+  const isScenarioView = view === "scenarios";
+
   // Main analysis view
   return (
     <div className="space-y-6">
@@ -128,16 +143,42 @@ export default function AnalysisPage() {
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-3">
             {model.profile.companyName}
-            <Badge variant="info">Analysis</Badge>
+            <Badge variant={isScenarioView ? "brand" : "info"}>
+              {isScenarioView ? "Scenario Lab" : "Analysis"}
+            </Badge>
           </h1>
           <p className="text-sm text-zinc-500 mt-1">
-            {model.profile.forecastYears}-Year Financial Projections & Valuation
+            {isScenarioView
+              ? "Interactive what-if analysis and valuation sensitivity"
+              : `${model.profile.forecastYears}-Year Financial Projections & Valuation`}
             {lastSaved && <span className="mx-2">·</span>}
             {lastSaved && <span>Saved {formatLastSaved(lastSaved)}</span>}
           </p>
         </div>
 
         <div className="flex items-center gap-2">
+          {/* View toggle tabs */}
+          <div className="hidden md:flex items-center bg-zinc-900/50 rounded-lg p-1 mr-2">
+            <Link href="/analysis">
+              <button className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                !isScenarioView
+                  ? "bg-zinc-800 text-white"
+                  : "text-zinc-400 hover:text-white"
+              }`}>
+                Analysis
+              </button>
+            </Link>
+            <Link href="/analysis?view=scenarios">
+              <button className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                isScenarioView
+                  ? "bg-amber-500/20 text-amber-400"
+                  : "text-zinc-400 hover:text-white"
+              }`}>
+                Scenarios
+              </button>
+            </Link>
+          </div>
+
           <PremiumButton variant="ghost" onClick={() => setShowAIChat(true)}>
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -158,8 +199,16 @@ export default function AnalysisPage() {
         </div>
       </div>
 
-      {/* Analysis Dashboard - Full Feature Set */}
-      <AnalysisDashboard analysis={analysis} currency={model.profile.currency} />
+      {/* Content - Scenario Builder or Analysis Dashboard */}
+      {isScenarioView ? (
+        <ScenarioBuilder
+          model={model}
+          baseAnalysis={analysis}
+          currency={model.profile.currency}
+        />
+      ) : (
+        <AnalysisDashboard analysis={analysis} currency={model.profile.currency} />
+      )}
 
       {/* AI Assistant */}
       <AIAssistant
@@ -169,5 +218,14 @@ export default function AnalysisPage() {
         onClose={() => setShowAIChat(false)}
       />
     </div>
+  );
+}
+
+// Default export with Suspense boundary for useSearchParams
+export default function AnalysisPage() {
+  return (
+    <Suspense fallback={<AnalysisLoading />}>
+      <AnalysisContent />
+    </Suspense>
   );
 }
