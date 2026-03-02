@@ -11,8 +11,13 @@ import { KPIDashboard } from "@/components/dashboards/KPIDashboard";
 import { ChartsDashboard } from "@/components/dashboards/ChartsDashboard";
 import { RiskDashboard } from "@/components/dashboards/RiskDashboard";
 import { AIAssistant, AIChatButton } from "@/components/AIAssistant";
+import { CommandCentre } from "@/components/modules/CommandCentre";
+import { VarianceAnalytics } from "@/components/modules/VarianceAnalytics";
+import { CapitalEngine } from "@/components/modules/CapitalEngine";
+import { DecisionLayer } from "@/components/modules/DecisionLayer";
+import { FinancialCoPilot } from "@/components/modules/FinancialCoPilot";
 
-type DashboardView = "overview" | "finance" | "kpis" | "charts" | "risk";
+type DashboardView = "command" | "overview" | "finance" | "variance" | "capital" | "decisions" | "kpis" | "charts" | "risk";
 
 function formatCurrency(value: number, currency: string = "USD"): string {
   const symbols: Record<string, string> = {
@@ -32,7 +37,7 @@ function formatPercent(value: number): string {
 
 export default function DashboardPage() {
   const { model, lastSaved, isLoading, isModelValid, saveModel } = useFinancialModel();
-  const [activeView, setActiveView] = useState<DashboardView>("overview");
+  const [activeView, setActiveView] = useState<DashboardView>("command");
   const [showAIChat, setShowAIChat] = useState(false);
   const [isLoadingDemo, setIsLoadingDemo] = useState(false);
 
@@ -57,7 +62,15 @@ export default function DashboardPage() {
 
   const hasValidModel = model && isModelValid(model);
 
+  const [showCoPilot, setShowCoPilot] = useState(false);
+
   const viewTabs = [
+    {
+      id: "command",
+      label: "Command Centre",
+      icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>,
+      badge: "NEW",
+    },
     {
       id: "overview",
       label: "Overview",
@@ -67,6 +80,21 @@ export default function DashboardPage() {
       id: "finance",
       label: "Finance",
       icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+    },
+    {
+      id: "variance",
+      label: "Variance",
+      icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>,
+    },
+    {
+      id: "capital",
+      label: "Capital",
+      icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>,
+    },
+    {
+      id: "decisions",
+      label: "Decisions",
+      icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
     },
     {
       id: "kpis",
@@ -433,9 +461,34 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* Command Centre View */}
+      {activeView === "command" && (
+        <CommandCentre
+          analysis={analysis}
+          currency={currency}
+          companyName={model.profile.companyName}
+          onStartPlanning={() => setActiveView("overview")}
+        />
+      )}
+
       {/* Finance View */}
       {activeView === "finance" && (
         <FinanceDashboard analysis={analysis} currency={currency} />
+      )}
+
+      {/* Variance Analytics View */}
+      {activeView === "variance" && (
+        <VarianceAnalytics analysis={analysis} currency={currency} />
+      )}
+
+      {/* Capital Engine View */}
+      {activeView === "capital" && (
+        <CapitalEngine analysis={analysis} currency={currency} />
+      )}
+
+      {/* Decision Layer View */}
+      {activeView === "decisions" && (
+        <DecisionLayer analysis={analysis} currency={currency} />
       )}
 
       {/* KPIs View */}
@@ -459,6 +512,14 @@ export default function DashboardPage() {
         analysis={analysis}
         isOpen={showAIChat}
         onClose={() => setShowAIChat(false)}
+      />
+
+      {/* Financial Co-Pilot */}
+      <FinancialCoPilot
+        analysis={analysis}
+        currentContext={activeView === "capital" ? "capital" : activeView === "variance" ? "analysis" : "dashboard"}
+        isExpanded={showCoPilot}
+        onToggle={() => setShowCoPilot(!showCoPilot)}
       />
     </DashboardShell>
   );
