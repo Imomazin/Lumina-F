@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useFinancialModel, formatLastSaved } from "@/lib/hooks/useFinancialModel";
 import { runFinancialAnalysis } from "@/lib/analysis/financial-engine";
@@ -46,7 +46,30 @@ function formatPercent(value: number): string {
   return `${(value * 100).toFixed(1)}%`;
 }
 
-export default function DashboardPage() {
+// Loading fallback for Suspense
+function DashboardLoading() {
+  return (
+    <div className="space-y-6 animate-pulse">
+      <div className="flex gap-2 overflow-x-auto pb-2">
+        {[1, 2, 3, 4, 5].map(i => (
+          <Skeleton key={i} width={80} height={36} className="rounded-lg flex-shrink-0" />
+        ))}
+      </div>
+      <div className="grid md:grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map(i => (
+          <SkeletonCard key={i} />
+        ))}
+      </div>
+      <div className="grid md:grid-cols-2 gap-6">
+        <Skeleton height={300} className="rounded-2xl" />
+        <Skeleton height={300} className="rounded-2xl" />
+      </div>
+    </div>
+  );
+}
+
+// Main dashboard content (separated for Suspense)
+function DashboardContent() {
   const searchParams = useSearchParams();
   const { model, lastSaved, isLoading, isModelValid, saveModel } = useFinancialModel();
   const [activeView, setActiveView] = useState<DashboardView>("command");
@@ -504,5 +527,14 @@ export default function DashboardPage() {
         onToggle={() => setShowCoPilot(!showCoPilot)}
       />
     </div>
+  );
+}
+
+// Default export with Suspense boundary for useSearchParams
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<DashboardLoading />}>
+      <DashboardContent />
+    </Suspense>
   );
 }
