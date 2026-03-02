@@ -16,6 +16,7 @@ import { VarianceAnalytics } from "@/components/modules/VarianceAnalytics";
 import { CapitalEngine } from "@/components/modules/CapitalEngine";
 import { DecisionLayer } from "@/components/modules/DecisionLayer";
 import { FinancialCoPilot } from "@/components/modules/FinancialCoPilot";
+import { ModelVersioning } from "@/components/modules/ModelVersioning";
 import {
   GlassPanel,
   PremiumButton,
@@ -28,7 +29,7 @@ import {
   AnimatedCounter,
 } from "@/components/ui/design-system";
 
-type DashboardView = "command" | "overview" | "finance" | "variance" | "capital" | "decisions" | "kpis" | "charts" | "risk";
+type DashboardView = "command" | "overview" | "finance" | "variance" | "capital" | "decisions" | "kpis" | "charts" | "risk" | "versions";
 
 function formatCurrency(value: number, currency: string = "USD"): string {
   const symbols: Record<string, string> = {
@@ -80,7 +81,7 @@ function DashboardContent() {
   // Handle view from URL params
   useEffect(() => {
     const view = searchParams.get("view") as DashboardView;
-    if (view && ["command", "overview", "finance", "variance", "capital", "decisions", "kpis", "charts", "risk"].includes(view)) {
+    if (view && ["command", "overview", "finance", "variance", "capital", "decisions", "kpis", "charts", "risk", "versions"].includes(view)) {
       setActiveView(view);
     }
   }, [searchParams]);
@@ -130,6 +131,7 @@ function DashboardContent() {
     { id: "kpis", label: "KPIs", icon: "🎯" },
     { id: "charts", label: "Charts", icon: "📉" },
     { id: "risk", label: "Risk", icon: "⚠️" },
+    { id: "versions", label: "Versions", icon: "📜" },
   ];
 
   // Loading state
@@ -508,6 +510,18 @@ function DashboardContent() {
         {/* Risk View */}
         {activeView === "risk" && (
           <RiskDashboard analysis={analysis} currency={currency} />
+        )}
+
+        {/* Versions View */}
+        {activeView === "versions" && (
+          <ModelVersioning
+            currentModel={model}
+            currency={currency}
+            onRestoreVersion={(restoredModel) => {
+              saveModel(restoredModel);
+              window.location.reload();
+            }}
+          />
         )}
       </div>
 
