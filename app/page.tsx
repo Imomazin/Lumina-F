@@ -316,6 +316,205 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Stats Section */}
+      <section className="py-16 border-t border-white/5 bg-gradient-to-b from-amber-500/5 to-transparent">
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            {[
+              { value: "50+", label: "Financial Ratios", sublabel: "Profitability, Liquidity, Solvency" },
+              { value: "10yr", label: "Forecast Horizon", sublabel: "Multi-year projections" },
+              { value: "1000+", label: "Monte Carlo Sims", sublabel: "Risk quantification" },
+              { value: "14", label: "Analysis Views", sublabel: "Comprehensive dashboards" },
+            ].map((stat) => (
+              <div key={stat.label} className="text-center">
+                <div className="text-4xl md:text-5xl font-bold text-amber-400">{stat.value}</div>
+                <div className="mt-2 text-white font-medium">{stat.label}</div>
+                <div className="text-sm text-gray-500">{stat.sublabel}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Workflow Section */}
+      <section className="py-24 border-t border-white/5">
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="text-center mb-16">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-400 mb-4">
+              Complete Workflow
+            </p>
+            <h2 className="text-3xl md:text-4xl font-bold">
+              End-to-end financial analysis
+            </h2>
+          </div>
+
+          <div className="grid md:grid-cols-5 gap-4">
+            {[
+              { step: "01", title: "Import", desc: "Upload Excel/CSV or enter manually", icon: "📥" },
+              { step: "02", title: "Model", desc: "Build 3-statement projections", icon: "📊" },
+              { step: "03", title: "Analyze", desc: "DCF, ratios, scenarios", icon: "🔍" },
+              { step: "04", title: "Stress Test", desc: "Monte Carlo & VaR", icon: "⚡" },
+              { step: "05", title: "Report", desc: "Export board-ready PDF", icon: "📄" },
+            ].map((item, idx) => (
+              <div key={item.step} className="relative">
+                <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/5 text-center h-full">
+                  <div className="text-3xl mb-3">{item.icon}</div>
+                  <div className="text-xs text-amber-400 font-mono mb-2">{item.step}</div>
+                  <h3 className="text-lg font-semibold text-white">{item.title}</h3>
+                  <p className="mt-2 text-sm text-gray-500">{item.desc}</p>
+                </div>
+                {idx < 4 && (
+                  <div className="hidden md:block absolute top-1/2 -right-2 transform -translate-y-1/2 z-10">
+                    <svg className="w-4 h-4 text-amber-400/50" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Detailed Features Grid */}
+      <section className="py-24 border-t border-white/5">
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="text-center mb-16">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-400 mb-4">
+              Full Feature Set
+            </p>
+            <h2 className="text-3xl md:text-4xl font-bold">
+              Everything you need
+            </h2>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {/* Column 1 - Modeling */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-amber-400 uppercase tracking-wider mb-4">Financial Modeling</h3>
+              {[
+                "3-Statement Model (IS, BS, CF)",
+                "Revenue stream configuration",
+                "Cost structure analysis",
+                "Working capital modeling",
+                "CapEx & depreciation schedules",
+                "Debt & equity financing",
+              ].map((item) => (
+                <div key={item} className="flex items-center gap-3 text-sm text-gray-300">
+                  <svg className="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  {item}
+                </div>
+              ))}
+            </div>
+
+            {/* Column 2 - Analysis */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-amber-400 uppercase tracking-wider mb-4">Analysis & Valuation</h3>
+              {[
+                "DCF with WACC calculation",
+                "Comparable company analysis",
+                "50+ financial ratios",
+                "Sensitivity tables (tornado)",
+                "Scenario comparison (bull/bear)",
+                "Monte Carlo simulation",
+              ].map((item) => (
+                <div key={item} className="flex items-center gap-3 text-sm text-gray-300">
+                  <svg className="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  {item}
+                </div>
+              ))}
+            </div>
+
+            {/* Column 3 - Intelligence */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-amber-400 uppercase tracking-wider mb-4">Intelligence & Output</h3>
+              {[
+                "AI-powered insights",
+                "Financial health scoring",
+                "Risk alerts & monitoring",
+                "Industry benchmarking",
+                "Executive PDF reports",
+                "Version history & comparison",
+              ].map((item) => (
+                <div key={item} className="flex items-center gap-3 text-sm text-gray-300">
+                  <svg className="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Comparison Table */}
+      <section className="py-24 border-t border-white/5">
+        <div className="mx-auto max-w-5xl px-6">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold">How Lumina F Compares</h2>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-white/10">
+                  <th className="text-left py-4 px-4 text-gray-400">Feature</th>
+                  <th className="text-center py-4 px-4 text-white font-semibold">Lumina F</th>
+                  <th className="text-center py-4 px-4 text-gray-500">Excel</th>
+                  <th className="text-center py-4 px-4 text-gray-500">Basic Tools</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {[
+                  { feature: "3-Statement Modeling", lumina: true, excel: "manual", basic: false },
+                  { feature: "DCF Valuation", lumina: true, excel: "manual", basic: false },
+                  { feature: "Monte Carlo Simulation", lumina: true, excel: false, basic: false },
+                  { feature: "Scenario Analysis", lumina: true, excel: "manual", basic: "limited" },
+                  { feature: "Real-time Calculations", lumina: true, excel: true, basic: false },
+                  { feature: "AI Insights", lumina: true, excel: false, basic: false },
+                  { feature: "Professional Reports", lumina: true, excel: "manual", basic: "limited" },
+                  { feature: "No Learning Curve", lumina: true, excel: false, basic: true },
+                ].map((row) => (
+                  <tr key={row.feature}>
+                    <td className="py-3 px-4 text-gray-300">{row.feature}</td>
+                    <td className="py-3 px-4 text-center">
+                      {row.lumina === true ? (
+                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-400/20 text-amber-400">✓</span>
+                      ) : (
+                        <span className="text-gray-600">{row.lumina}</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      {row.excel === true ? (
+                        <span className="text-gray-400">✓</span>
+                      ) : row.excel === false ? (
+                        <span className="text-gray-600">✗</span>
+                      ) : (
+                        <span className="text-gray-500 text-xs">{row.excel}</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      {row.basic === true ? (
+                        <span className="text-gray-400">✓</span>
+                      ) : row.basic === false ? (
+                        <span className="text-gray-600">✗</span>
+                      ) : (
+                        <span className="text-gray-500 text-xs">{row.basic}</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-24 border-t border-white/5">
         <div className="mx-auto max-w-7xl px-6 text-center">
