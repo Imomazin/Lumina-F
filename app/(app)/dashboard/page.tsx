@@ -18,6 +18,16 @@ import { DecisionLayer } from "@/components/modules/DecisionLayer";
 import { FinancialCoPilot } from "@/components/modules/FinancialCoPilot";
 import { ModelVersioning } from "@/components/modules/ModelVersioning";
 import {
+  ActivityFeed,
+  IndustryBenchmark,
+  KeyDrivers,
+  DataQuality,
+  ForecastTimeline,
+  AIInsights,
+  QuickStats,
+  ScenarioComparison,
+} from "@/components/widgets/DashboardWidgets";
+import {
   GlassPanel,
   PremiumButton,
   MetricCard,
@@ -438,6 +448,12 @@ function DashboardContent() {
               </GlassPanel>
             </div>
 
+            {/* AI Insights Banner */}
+            <AIInsights analysis={analysis} companyName={model.profile.companyName} />
+
+            {/* Quick Stats Row */}
+            <QuickStats analysis={analysis} currency={currency} />
+
             {/* Insights Row */}
             <div className="grid md:grid-cols-2 gap-6">
               <GlassPanel padding="lg">
@@ -473,6 +489,20 @@ function DashboardContent() {
                   ))}
                 </ul>
               </GlassPanel>
+            </div>
+
+            {/* Third Row - Activity, Benchmarks, Drivers */}
+            <div className="grid lg:grid-cols-3 gap-6">
+              <ActivityFeed companyName={model.profile.companyName} />
+              <IndustryBenchmark analysis={analysis} industry={model.profile.industry} />
+              <KeyDrivers analysis={analysis} currency={currency} />
+            </div>
+
+            {/* Fourth Row - Timeline, Quality, Scenarios */}
+            <div className="grid lg:grid-cols-3 gap-6">
+              <ForecastTimeline analysis={analysis} currency={currency} />
+              <DataQuality model={model} />
+              <ScenarioComparison analysis={analysis} currency={currency} />
             </div>
           </div>
         )}
