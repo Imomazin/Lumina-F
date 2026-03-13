@@ -116,7 +116,7 @@ export function AppShell({ children }: AppShellProps) {
   const [showMobileNav, setShowMobileNav] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const { showOnboarding, setShowOnboarding, resetOnboarding } = useOnboarding();
-  const { showShortcuts, setShowShortcuts } = useKeyboardShortcuts();
+  const { isOpen: showShortcuts, open: openShortcuts, close: closeShortcuts } = useKeyboardShortcuts();
 
   // Check for Cmd+K hint
   const [showCmdKHint, setShowCmdKHint] = useState(true);
@@ -343,7 +343,7 @@ export function AppShell({ children }: AppShellProps) {
             <div className="flex items-center gap-2">
               {/* Keyboard shortcuts */}
               <button
-                onClick={() => setShowShortcuts(true)}
+                onClick={() => openShortcuts()}
                 className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
                 title="Keyboard shortcuts (Cmd+/)"
               >
@@ -388,7 +388,7 @@ export function AppShell({ children }: AppShellProps) {
       />
       <KeyboardShortcutsModal
         isOpen={showShortcuts}
-        onClose={() => setShowShortcuts(false)}
+        onClose={() => closeShortcuts()}
       />
       <NotificationCenter
         isOpen={showNotifications}

@@ -20,6 +20,9 @@ import { ModelVersioning } from "@/components/modules/ModelVersioning";
 import { UnitEconomics } from "@/components/modules/UnitEconomics";
 import { CommentsPanel } from "@/components/modules/CommentsPanel";
 import { AuditTrail } from "@/components/modules/AuditTrail";
+import { MandAModule } from "@/components/modules/MandAModule";
+import { ExportPanel, useExportPanel } from "@/components/ui/ExportPanel";
+import { GlossaryPanel } from "@/components/ui/HelpTooltip";
 import {
   ActivityFeed,
   IndustryBenchmark,
@@ -42,7 +45,7 @@ import {
   AnimatedCounter,
 } from "@/components/ui/design-system";
 
-type DashboardView = "command" | "overview" | "finance" | "variance" | "capital" | "decisions" | "kpis" | "charts" | "risk" | "versions" | "unit-econ" | "comments" | "audit";
+type DashboardView = "command" | "overview" | "finance" | "variance" | "capital" | "decisions" | "kpis" | "charts" | "risk" | "versions" | "unit-econ" | "comments" | "audit" | "manda";
 
 function formatCurrency(value: number, currency: string = "USD"): string {
   const symbols: Record<string, string> = {
@@ -90,11 +93,13 @@ function DashboardContent() {
   const [showAIChat, setShowAIChat] = useState(false);
   const [isLoadingDemo, setIsLoadingDemo] = useState(false);
   const [showCoPilot, setShowCoPilot] = useState(false);
+  const [showExportPanel, setShowExportPanel] = useState(false);
+  const [showGlossary, setShowGlossary] = useState(false);
 
   // Handle view from URL params
   useEffect(() => {
     const view = searchParams.get("view") as DashboardView;
-    if (view && ["command", "overview", "finance", "variance", "capital", "decisions", "kpis", "charts", "risk", "versions", "unit-econ", "comments", "audit"].includes(view)) {
+    if (view && ["command", "overview", "finance", "variance", "capital", "decisions", "kpis", "charts", "risk", "versions", "unit-econ", "comments", "audit", "manda"].includes(view)) {
       setActiveView(view);
     }
   }, [searchParams]);
@@ -145,6 +150,7 @@ function DashboardContent() {
     { id: "charts", label: "Charts", icon: "📉" },
     { id: "risk", label: "Risk", icon: "⚠️" },
     { id: "unit-econ", label: "Unit Economics", icon: "💵" },
+    { id: "manda", label: "M&A", icon: "🤝" },
     { id: "versions", label: "Versions", icon: "📜" },
     { id: "comments", label: "Comments", icon: "💬" },
     { id: "audit", label: "Audit Trail", icon: "📋" },
@@ -305,20 +311,24 @@ function DashboardContent() {
         </div>
 
         <div className="flex items-center gap-2">
+          <PremiumButton variant="ghost" onClick={() => setShowGlossary(true)}>
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+            Glossary
+          </PremiumButton>
           <PremiumButton variant="ghost" onClick={() => setShowAIChat(true)}>
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
             Ask AI
           </PremiumButton>
-          <Link href="/reports">
-            <PremiumButton variant="secondary">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              Export
-            </PremiumButton>
-          </Link>
+          <PremiumButton variant="secondary" onClick={() => setShowExportPanel(true)}>
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Export
+          </PremiumButton>
         </div>
       </div>
 
@@ -570,12 +580,29 @@ function DashboardContent() {
 
         {/* Comments View */}
         {activeView === "comments" && (
-          <CommentsPanel modelId={model.profile.companyName} />
+          <CommentsPanel
+            isOpen={true}
+            onClose={() => setActiveView("overview")}
+          />
         )}
 
         {/* Audit Trail View */}
         {activeView === "audit" && (
-          <AuditTrail modelId={model.profile.companyName} />
+          <AuditTrail
+            isOpen={true}
+            onClose={() => setActiveView("overview")}
+          />
+        )}
+
+        {/* M&A Module View */}
+        {activeView === "manda" && (
+          <MandAModule
+            acquirerRevenue={analysis.baseCase.yearlyFinancials[0].revenue}
+            acquirerEbitda={analysis.baseCase.yearlyFinancials[0].ebitda}
+            acquirerShares={100000000}
+            acquirerSharePrice={analysis.baseCase.dcfValuation.equityValue / 100000000}
+            currency={currency}
+          />
         )}
       </div>
 
@@ -593,6 +620,21 @@ function DashboardContent() {
         currentContext={activeView === "capital" ? "capital" : activeView === "variance" ? "analysis" : "dashboard"}
         isExpanded={showCoPilot}
         onToggle={() => setShowCoPilot(!showCoPilot)}
+      />
+
+      {/* Export Panel */}
+      <ExportPanel
+        model={model}
+        analysis={analysis}
+        currency={currency}
+        isOpen={showExportPanel}
+        onClose={() => setShowExportPanel(false)}
+      />
+
+      {/* Glossary Panel */}
+      <GlossaryPanel
+        isOpen={showGlossary}
+        onClose={() => setShowGlossary(false)}
       />
     </div>
   );
