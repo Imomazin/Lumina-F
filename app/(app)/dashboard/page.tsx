@@ -17,6 +17,9 @@ import { CapitalEngine } from "@/components/modules/CapitalEngine";
 import { DecisionLayer } from "@/components/modules/DecisionLayer";
 import { FinancialCoPilot } from "@/components/modules/FinancialCoPilot";
 import { ModelVersioning } from "@/components/modules/ModelVersioning";
+import { UnitEconomics } from "@/components/modules/UnitEconomics";
+import { CommentsPanel } from "@/components/modules/CommentsPanel";
+import { AuditTrail } from "@/components/modules/AuditTrail";
 import {
   ActivityFeed,
   IndustryBenchmark,
@@ -39,7 +42,7 @@ import {
   AnimatedCounter,
 } from "@/components/ui/design-system";
 
-type DashboardView = "command" | "overview" | "finance" | "variance" | "capital" | "decisions" | "kpis" | "charts" | "risk" | "versions";
+type DashboardView = "command" | "overview" | "finance" | "variance" | "capital" | "decisions" | "kpis" | "charts" | "risk" | "versions" | "unit-econ" | "comments" | "audit";
 
 function formatCurrency(value: number, currency: string = "USD"): string {
   const symbols: Record<string, string> = {
@@ -91,7 +94,7 @@ function DashboardContent() {
   // Handle view from URL params
   useEffect(() => {
     const view = searchParams.get("view") as DashboardView;
-    if (view && ["command", "overview", "finance", "variance", "capital", "decisions", "kpis", "charts", "risk", "versions"].includes(view)) {
+    if (view && ["command", "overview", "finance", "variance", "capital", "decisions", "kpis", "charts", "risk", "versions", "unit-econ", "comments", "audit"].includes(view)) {
       setActiveView(view);
     }
   }, [searchParams]);
@@ -141,7 +144,10 @@ function DashboardContent() {
     { id: "kpis", label: "KPIs", icon: "🎯" },
     { id: "charts", label: "Charts", icon: "📉" },
     { id: "risk", label: "Risk", icon: "⚠️" },
+    { id: "unit-econ", label: "Unit Economics", icon: "💵" },
     { id: "versions", label: "Versions", icon: "📜" },
+    { id: "comments", label: "Comments", icon: "💬" },
+    { id: "audit", label: "Audit Trail", icon: "📋" },
   ];
 
   // Loading state
@@ -552,6 +558,24 @@ function DashboardContent() {
               window.location.reload();
             }}
           />
+        )}
+
+        {/* Unit Economics View */}
+        {activeView === "unit-econ" && (
+          <UnitEconomics
+            analysis={analysis}
+            currency={currency}
+          />
+        )}
+
+        {/* Comments View */}
+        {activeView === "comments" && (
+          <CommentsPanel modelId={model.profile.companyName} />
+        )}
+
+        {/* Audit Trail View */}
+        {activeView === "audit" && (
+          <AuditTrail modelId={model.profile.companyName} />
         )}
       </div>
 
